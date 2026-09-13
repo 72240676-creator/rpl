@@ -12,17 +12,20 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('vehicles', function (Blueprint $table) {
-            $table->id();
+            $table->id('id_vehicle'); // Primary Key kendaraan
             
-            // Relasi ke tabel users
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            // Membuat kolom Foreign Key
+            $table->unsignedBigInteger('id_user');
             
-            $table->string('license_plate')->unique();
-            $table->string('brand');
+            // Menghubungkan id_user di tabel vehicles dengan id_user di tabel users
+            $table->foreign('id_user')
+                  ->references('id_user')->on('users')
+                  ->onDelete('cascade'); // Jika user dihapus, data mobilnya ikut terhapus
+                  
+            $table->string('merek');
             $table->string('model');
-            // Angka 8 adalah total digit, 2 adalah angka di belakang koma (contoh: 999999.99)
-            $table->decimal('battery_capacity_kwh', 8, 2); 
-            
+            $table->string('nomor_polisi');
+            $table->string('tipe_konektor');
             $table->timestamps();
         });
     }

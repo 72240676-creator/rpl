@@ -11,16 +11,23 @@ return new class extends Migration
         Schema::create('charging_sessions', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignId('user_id')
-                ->constrained('users')
+            // 1. Relasi manual ke id_user pada tabel users
+            $table->unsignedBigInteger('user_id');
+            $table->foreign('user_id')
+                ->references('id_user')
+                ->on('users')
                 ->onDelete('cascade');
 
+            // 2. Relasi otomatis ke tabel chargers (menggunakan id default)
             $table->foreignId('charger_id')
                 ->constrained('chargers')
                 ->onDelete('cascade');
 
-            $table->foreignId('vehicle_id')
-                ->constrained('vehicles')
+            // 3. Relasi manual ke id_vehicle pada tabel vehicles
+            $table->unsignedBigInteger('vehicle_id');
+            $table->foreign('vehicle_id')
+                ->references('id_vehicle')
+                ->on('vehicles')
                 ->onDelete('cascade');
 
             $table->dateTime('start_time');

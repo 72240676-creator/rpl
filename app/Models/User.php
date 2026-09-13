@@ -13,15 +13,21 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    // 1. Definisikan Primary Key kustom
+    protected $primaryKey = 'id_user';
+
     /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
      */
     protected $fillable = [
-        'name',
+        'nama',
         'email',
         'password',
+        'nomor_telepon',
+        'peran',
+        'status_akun',
     ];
 
     /**
@@ -45,5 +51,11 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    // Relasi: User memiliki banyak Vehicle (disesuaikan dengan foreign key id_user)
+    public function vehicles()
+    {
+        return $this->hasMany(Vehicle::class, 'id_user', 'id_user');
     }
 }

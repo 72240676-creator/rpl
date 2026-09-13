@@ -11,35 +11,38 @@ return new class extends Migration
      */
     public function up(): void
     {
-    Schema::create('stations', function (Blueprint $table) {
-        $table->id();
+        Schema::create('stations', function (Blueprint $table) {
+            $table->id();
 
-        $table->foreignId('operator_id')
-            ->constrained('users')
-            ->onDelete('cascade');
+            $table->unsignedBigInteger('operator_id');
+            
+            $table->foreign('operator_id')
+                ->references('id_user')
+                ->on('users')
+                ->onDelete('cascade');
 
-        $table->string('name');
-        $table->text('address');
+            $table->string('name');
+            $table->text('address');
 
-        $table->decimal('latitude', 10, 7);
-        $table->decimal('longitude', 10, 7);
+            $table->decimal('latitude', 10, 7);
+            $table->decimal('longitude', 10, 7);
 
-        $table->string('operational_hours')->nullable();
+            $table->string('operational_hours')->nullable();
 
-        $table->json('facilities')->nullable();
+            $table->json('facilities')->nullable();
 
-        $table->string('photo_url')->nullable();
+            $table->string('photo_url')->nullable();
 
-        $table->enum('status', [
-            'active',
-            'closed_temporary',
-            'full',
-            'maintenance'
-        ])->default('active');
+            $table->enum('status', [
+                'active',
+                'closed_temporary',
+                'full',
+                'maintenance'
+            ])->default('active');
 
-        $table->timestamps();
-    });
-}
+            $table->timestamps();
+        });
+    }
 
     /**
      * Reverse the migrations.
