@@ -1,9 +1,11 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
-use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\LocationController;
+use App\Models\Location; 
 
 // Mengalihkan halaman utama (/) langsung ke halaman login
 Route::get('/', function () {
@@ -25,12 +27,25 @@ Route::post('/login', [AuthController::class, 'authenticate']);
 Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
 Route::post('/register', [AuthController::class, 'register']);
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware('auth');
 
 Route::middleware('auth')->group(function () {
+    
+    Route::get('/dashboard', function () {
+        $nearestLocation = Location::where('status', 'aktif')->first();
+        return view('dashboard', compact('nearestLocation'));
+    })->name('dashboard');
+
+    // Rute Profile & Kendaraan
     Route::get('/profile', [ProfileController::class, 'index']);
     Route::post('/profile/vehicle', [ProfileController::class, 'storeVehicle']);
     Route::put('/profile/update', [ProfileController::class, 'updateProfile'])->name('profile.update');
+
+    // Fitur Pengemudi: Cari & Lihat Lokasi SPKLU
+    Route::get('/locations', [LocationController::class, 'index'])->name('locations.index');
+
+    // Fitur Operator: Panel CRUD Lokasi SPKLU
+    Route::get('/operator/locations', [LocationController::class, 'operatorIndex'])->name('operator.locations');
+    Route::post('/operator/locations', [LocationController::class, 'store'])->name('operator.locations.store');
+    Route::put('/operator/locations/{id}', [LocationController::class, 'update'])->name('operator.locations.update');
+    
 });
