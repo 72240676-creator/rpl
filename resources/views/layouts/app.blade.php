@@ -232,6 +232,11 @@
         <!-- Tombol Profil & Logout (Hanya tampil jika user sudah login) -->
         @auth
             <div style="display: flex; align-items: center; gap: 12px;">
+                <!-- Tombol Notifikasi (Fitur No. 6) -->
+                <a href="/notifications" class="nav-profile-btn">
+                    <span>🔔</span> Pemberitahuan
+                </a>
+
                 <!-- Tombol Profil -->
                 <a href="/profile" class="nav-profile-btn">
                     <span>👤</span> Profil & Kendaraan

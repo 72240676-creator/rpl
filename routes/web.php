@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\NotificationController;
 use App\Models\Location; 
 
 // Mengalihkan halaman utama (/) langsung ke halaman login
@@ -29,7 +30,7 @@ Route::post('/register', [AuthController::class, 'register']);
 
 
 Route::middleware('auth')->group(function () {
-    
+
     Route::get('/dashboard', function () {
         $nearestLocation = Location::where('status', 'aktif')->first();
         return view('dashboard', compact('nearestLocation'));
@@ -47,5 +48,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/operator/locations', [LocationController::class, 'operatorIndex'])->name('operator.locations');
     Route::post('/operator/locations', [LocationController::class, 'store'])->name('operator.locations.store');
     Route::put('/operator/locations/{id}', [LocationController::class, 'update'])->name('operator.locations.update');
-    
+
+    // Fitur No. 6: Sistem Notifikasi (FR-08)
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
+    Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
+
 });
