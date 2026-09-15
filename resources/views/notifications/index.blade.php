@@ -3,6 +3,13 @@
 @section('content')
 <div style="max-width: 900px; margin: 30px auto; padding: 0 20px; font-family: inherit;">
     
+    <!-- Tombol Kembali ke Dashboard -->
+    <div style="margin-bottom: 16px;">
+        <a href="{{ route('dashboard') }}" style="display: inline-flex; align-items: center; text-decoration: none; color: #4b5563; font-size: 14px; font-weight: 500; transition: color 0.2s;">
+            ← Kembali ke Dashboard
+        </a>
+    </div>
+
     <!-- Bagian Header -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
         <div>
