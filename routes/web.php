@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ChargingController;
 use App\Models\Location; 
 
 // Mengalihkan halaman utama (/) langsung ke halaman login
@@ -54,4 +55,10 @@ Route::middleware('auth')->group(function () {
     Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
     Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
 
+    Route::get('/scan-charge', [ChargingController::class, 'scan'])
+    ->name('scan.charge');
+    Route::post('/scan-charge/process', [ChargingController::class, 'processScan'])
+    ->name('scan.charge.process');
+    Route::get('/scan-charge/{charger}', [ChargingController::class, 'show'])
+    ->name('scan.charge.show');
 });
