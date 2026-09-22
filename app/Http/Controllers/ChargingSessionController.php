@@ -13,9 +13,13 @@ class ChargingSessionController extends Controller
      */
     public function start(Request $request)
     {
+        $request->validate([
+            'charger_id' => 'required|exists:chargers,id',
+        ]);
+
         $user = auth()->user();
 
-        // Cek apakah user masih punya session yang sedang berjalan
+        // Cek apakah user masih mempunyai charging session yang berjalan
         $ongoingSession = ChargingSession::where('user_id', $user->id_user)
             ->where('status', 'ongoing')
             ->first();
@@ -26,7 +30,7 @@ class ChargingSessionController extends Controller
                 ->with('error', 'Anda masih memiliki sesi pengisian yang sedang berjalan.');
         }
 
-        // Ambil charger yang dipilih
+        // Ambil charger
         $charger = Charger::findOrFail($request->charger_id);
 
         // Ambil kendaraan pertama milik user
@@ -36,7 +40,7 @@ class ChargingSessionController extends Controller
             return back()->with('error', 'Anda belum memiliki kendaraan.');
         }
 
-        // Buat charging session baru
+        // Buat charging session
         $session = ChargingSession::create([
             'user_id' => $user->id_user,
             'charger_id' => $charger->id,
@@ -52,11 +56,18 @@ class ChargingSessionController extends Controller
     }
 
     /**
-     * Menampilkan charging session yang sedang berjalan.
+     * Menampilkan halaman monitoring charging.
      */
     public function show(ChargingSession $session)
     {
-        return view('chargingsession', compact('session'));
+        // Pastikan session milik user yang sedang login
+        if ($session->user_id !== auth()->user()->id_user) {
+            abort(403);
+        }
+
+        $charger = Charger::findOrFail($session->charger_id);
+
+        return view('chargingsession', compact('session', 'charger'));
     }
 
     /**
@@ -64,8 +75,50 @@ class ChargingSessionController extends Controller
      */
     public function stop(ChargingSession $session)
     {
+        // Pastikan session milik user yang sedang login
+        if ($session->user_id !== auth()->user()->id_user) {
+            abort(403);
+        }
+
+        // Jika sudah selesai
+        if ($session->status !== 'ongoing') {
+            return redirect()
+                ->route('charging.session', $session->id)
+                ->with('error', 'Charging session sudah selesai.');
+        }
+
+        $endTime = now();
+
+        // Hitung durasi charging dalam detik
+        $durationSeconds = $session->start_time->diffInSeconds($endTime);
+
+        // Ambil charger
+        $charger = Charger::findOrFail($session->charger_id);
+
+        /*
+         * Perhitungan energi:
+         *
+         * Energi (kWh) =
+         * durasi (jam) × daya charger (kW)
+         */
+        $durationHours = $durationSeconds / 3600;
+
+        $energyConsumed = $durationHours * $charger->max_power_kw;
+
+        // Minimal 0.01 kWh agar session sangat singkat tetap tercatat
+        $energyConsumed = max(0.01, $energyConsumed);
+
+        // Ambil tarif charger
+        $pricePerKwh = $charger->price_per_kwh;
+
+        // Hitung total biaya
+        $totalCost = $energyConsumed * $pricePerKwh;
+
+        // Simpan hasil charging
         $session->update([
-            'end_time' => now(),
+            'end_time' => $endTime,
+            'energy_consumed_kwh' => round($energyConsumed, 3),
+            'total_cost' => round($totalCost, 2),
             'status' => 'completed',
         ]);
 

@@ -3,10 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\User;
-use App\Models\Charger;
-use App\Models\Vehicle;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ChargingSession extends Model
 {
@@ -29,26 +25,38 @@ class ChargingSession extends Model
     ];
 
     /**
-     * Session dimiliki oleh satu user.
+     * User yang melakukan charging.
      */
-    public function user(): BelongsTo
+    public function user()
     {
-        return $this->belongsTo(User::class, 'user_id', 'id_user');
+        return $this->belongsTo(
+            User::class,
+            'user_id',
+            'id_user'
+        );
     }
 
     /**
-     * Session menggunakan satu charger.
+     * Charger yang digunakan.
      */
-    public function charger(): BelongsTo
+    public function charger()
     {
-        return $this->belongsTo(Charger::class);
+        return $this->belongsTo(
+            Charger::class,
+            'charger_id',
+            'id'
+        );
     }
 
     /**
-     * Session menggunakan satu kendaraan.
+     * Kendaraan yang digunakan.
      */
-    public function vehicle(): BelongsTo
+    public function vehicle()
     {
-        return $this->belongsTo(Vehicle::class, 'vehicle_id', 'id_vehicle');
+        return $this->belongsTo(
+            Vehicle::class,
+            'vehicle_id',
+            'id_vehicle'
+        );
     }
 }
