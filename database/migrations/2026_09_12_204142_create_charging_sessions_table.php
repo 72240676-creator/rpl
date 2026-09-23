@@ -33,15 +33,10 @@ return new class extends Migration
                 ->onDelete('cascade');
 
             $table->dateTime('start_time');
+            $table->dateTime('end_time')->nullable();
 
-            $table->dateTime('end_time')
-                ->nullable();
-
-            $table->decimal('energy_consumed_kwh', 10, 3)
-                ->nullable();
-
-            $table->decimal('total_cost', 12, 2)
-                ->nullable();
+            $table->decimal('energy_consumed_kwh', 10, 3)->nullable();
+            $table->decimal('total_cost', 12, 2)->nullable();
 
             $table->enum('status', [
                 'ongoing',

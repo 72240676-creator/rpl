@@ -193,7 +193,7 @@
                 font-size: 16px;
             }
         }
-        
+
         .nav-profile-btn {
             background: rgba(16, 185, 129, 0.1);
             color: #059669;

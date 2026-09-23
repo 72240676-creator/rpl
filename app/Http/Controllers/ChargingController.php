@@ -19,10 +19,6 @@ class ChargingController extends Controller
 
         $image = $request->file('qr_image');
 
-        /*
-         * Untuk sementara kita cek apakah foto berhasil diterima.
-         */
-
         return view('scan-result', [
             'image' => $image->getClientOriginalName(),
         ]);

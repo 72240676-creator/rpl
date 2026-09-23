@@ -16,7 +16,6 @@
         </p>
     </div>
 
-
     <div style="
         background: #ffffff;
         border-radius: 20px;
@@ -40,7 +39,6 @@
             🔌
         </div>
 
-
         <h3 style="
             margin: 0 0 8px 0;
             color: #0f172a;
@@ -49,14 +47,12 @@
             Charger #{{ $charger }}
         </h3>
 
-
         <p style="
             margin: 0 0 25px 0;
             color: #64748b;
         ">
             Unit charger berhasil ditemukan melalui QR Code.
         </p>
-
 
         <div style="
             background: #f8fafc;
@@ -79,7 +75,6 @@
                 </strong>
             </div>
 
-
             <div style="
                 display: flex;
                 justify-content: space-between;
@@ -101,7 +96,6 @@
                 </span>
             </div>
 
-
             <div style="
                 display: flex;
                 justify-content: space-between;
@@ -117,7 +111,6 @@
 
         </div>
 
-
         <div style="
             background: #fffbeb;
             color: #92400e;
@@ -127,31 +120,41 @@
             line-height: 1.5;
             margin-bottom: 25px;
         ">
-            💡 Pastikan kendaraan sudah terhubung dengan charger
-            sebelum memulai pengisian daya.
+            💡 Pastikan kendaraan sudah terhubung dengan charger sebelum memulai pengisian daya.
         </div>
-
 
         <div style="
             display: flex;
             gap: 12px;
             flex-wrap: wrap;
+            align-items: center;
         ">
 
-            <!-- Ini nanti dilanjutkan teman -->
-            <a href="#"
-               style="
-                    background: #059669;
-                    color: white;
-                    padding: 13px 25px;
-                    border-radius: 12px;
-                    text-decoration: none;
-                    font-weight: 700;
-                    font-size: 14px;
-               ">
-                ⚡ Mulai Pengisian
-            </a>
+            {{-- Form untuk Memulai Pengisian Daya --}}
+            <form action="{{ route('charging.start') }}" method="POST" style="margin: 0;">
+                @csrf
+                <input type="hidden" name="charger_id" value="{{ $charger }}">
 
+                <button
+                    type="submit"
+                    style="
+                        background: #059669;
+                        color: white;
+                        padding: 13px 25px;
+                        border: none;
+                        border-radius: 12px;
+                        text-decoration: none;
+                        font-weight: 700;
+                        font-size: 14px;
+                        cursor: pointer;
+                        transition: background 0.2s;
+                    "
+                    onmouseover="this.style.background='#047857'"
+                    onmouseout="this.style.background='#059669'"
+                >
+                    ⚡ Mulai Pengisian
+                </button>
+            </form>
 
             <a href="{{ route('scan.charge') }}"
                style="

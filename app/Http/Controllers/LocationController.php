@@ -36,10 +36,11 @@ class LocationController extends Controller
         $request->validate([
             'nama_lokasi' => 'required|string|max:255',
             'alamat' => 'required|string',
-            'latitude' => 'required',
-            'longitude' => 'required',
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
             'jam_operasional' => 'required|string',
-            'status' => 'required|in:aktif,tutup sementara,penuh,dalam perawatan',
+            'fasilitas' => 'nullable|string',
+            'status' => 'required|in:aktif,tutup_sementara,penuh,perawatan',
             'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
@@ -62,10 +63,20 @@ class LocationController extends Controller
         $request->validate([
             'nama_lokasi' => 'required|string|max:255',
             'alamat' => 'required|string',
-            'status' => 'required|in:aktif,tutup_sementara,penuh,dalam_perawatan',
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+            'jam_operasional' => 'required|string',
+            'fasilitas' => 'nullable|string',
+            'status' => 'required|in:aktif,tutup_sementara,penuh,perawatan',
         ]);
 
-        $location->update($request->all());
+        $data = $request->all();
+
+        if ($request->hasFile('foto')) {
+            $data['foto'] = $request->file('foto')->store('stations', 'public');
+        }
+
+        $location->update($data);
 
         return back()->with('success', 'Data lokasi SPKLU berhasil diperbarui!');
     }

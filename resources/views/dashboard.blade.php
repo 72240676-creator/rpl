@@ -111,10 +111,20 @@
         
     </div>
 
+<<<<<<< HEAD
     <!-- Tombol Mengambang / Scan Barcode -->
     <button class="floating-scan">
         <span style="font-size: 20px;">📷</span> Scan / Charge EV
     </button>
+=======
+    //tombol scan barcode
+    <a href="{{ route('scan.charge') }}"
+    class="floating-scan"
+    style="text-decoration: none; cursor: pointer;">
+        <span style="font-size: 20px;">📷</span>
+        Scan / Charge EV
+    </a>
+>>>>>>> 0ca36b79a6200b4e5f27905baa1fbc4ba7c56ca3
     
 </div>
 @endsection
