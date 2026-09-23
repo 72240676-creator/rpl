@@ -75,9 +75,9 @@ Route::middleware('auth')->group(function () {
         // Management Location/Stasiun
         Route::get('/stations', [StationController::class, 'index'])->name('stations.index');
         Route::post('/stations', [StationController::class, 'store'])->name('stations.store');
+        Route::get('/stations/{id_location}/edit', [StationController::class, 'edit'])->name('stations.edit'); 
         Route::put('/stations/{id_location}', [StationController::class, 'update'])->name('stations.update');
         Route::delete('/stations/{id_location}', [StationController::class, 'destroy'])->name('stations.destroy');
-        
         // Management Charger
         Route::post('/stations/{id_location}/chargers', [StationController::class, 'storeCharger'])->name('chargers.store');
         Route::delete('/chargers/{id_charger}', [StationController::class, 'destroyCharger'])->name('chargers.destroy');

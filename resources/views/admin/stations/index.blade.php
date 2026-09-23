@@ -136,6 +136,7 @@
                                     </td>
                                     <td style="padding: 12px; text-align: right;">
                                         <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                                            <a href="{{ route('admin.stations.edit', $location->id_location) }}" style="background: #e0e7ff; color: #4338ca; border: none; padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none;">Edit</a>
                                             <button type="button" onclick="openChargerModal('{{ $location->id_location }}', '{{$location->nama_lokasi }}')" style="background: #2563eb; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
                                                 🔌 Charger
                                             </button>

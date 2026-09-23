@@ -30,6 +30,11 @@ class StationController extends Controller
 
         return redirect()->back()->with('success', 'Stasiun SPKLU berhasil ditambahkan!');
     }
+    public function edit($id_location)
+    {
+        $station = Location::findOrFail($id_location);
+        return view('admin.stations.edit', compact('station'));
+    }
 
     public function update(Request $request, $id_location)
     {
@@ -47,8 +52,9 @@ class StationController extends Controller
 
         $location->update($request->all());
 
-        return redirect()->back()->with('success', 'Data stasiun berhasil diperbarui!');
+        return redirect()->route('admin.stations.index')->with('success', 'Data stasiun berhasil diperbarui!');
     }
+
 
     public function destroy($id_location)
     {
