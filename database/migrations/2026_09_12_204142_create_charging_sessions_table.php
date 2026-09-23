@@ -18,9 +18,11 @@ return new class extends Migration
                 ->on('users')
                 ->onDelete('cascade');
 
-            // 2. Relasi otomatis ke tabel chargers (menggunakan id default)
-            $table->foreignId('charger_id')
-                ->constrained('chargers')
+            // 2. Relasi manual ke id_charger pada tabel chargers
+            $table->unsignedBigInteger('charger_id');
+            $table->foreign('charger_id')
+                ->references('id_charger')
+                ->on('chargers')
                 ->onDelete('cascade');
 
             // 3. Relasi manual ke id_vehicle pada tabel vehicles

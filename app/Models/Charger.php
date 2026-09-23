@@ -2,14 +2,18 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Charger extends Model
 {
     use HasFactory;
 
+    protected $primaryKey = 'id_charger';
+
     protected $fillable = [
-        'station_id',
+        'id_location',
         'device_number',
         'connector_type',
         'max_power_kw',
@@ -19,16 +23,13 @@ class Charger extends Model
     ];
 
     protected $casts = [
-        'max_power_kw' => 'decimal:2',
+        'max_power_kw'  => 'decimal:2',
         'price_per_kwh' => 'decimal:2',
-        'is_online' => 'boolean',
+        'is_online'     => 'boolean',
     ];
 
-    /**
-     * Charger berada di satu station.
-     */
-    public function station(): BelongsTo
+    public function location(): BelongsTo
     {
-        return $this->belongsTo(Station::class);
+        return $this->belongsTo(Location::class, 'id_location', 'id_location');
     }
 }

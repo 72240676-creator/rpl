@@ -6,7 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
-class AuthController
+
+class AuthController extends Controller
 {
     // Menampilkan halaman form login
     public function showLoginForm()
@@ -29,6 +30,23 @@ class AuthController
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
+
+            // 1. Cek status akun terlebih dahulu
+            if (Auth::user()->status_akun === 'nonaktif') {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return back()->withErrors([
+                    'email' => 'Akun Anda sedang dinonaktifkan. Silakan hubungi admin.',
+                ])->onlyInput('email');
+            }
+
+            // 2. Redirect berdasarkan peran (Admin vs Pengemudi)
+            if (Auth::user()->peran === 'admin') {
+                return redirect()->route('admin.stations.index')->with('success', 'Selamat datang kembali, Admin!');
+            }
+
             return redirect()->intended('/dashboard')->with('success', 'Berhasil login!');
         }
 
@@ -36,6 +54,7 @@ class AuthController
             'email' => 'Email atau password yang Anda masukkan salah.',
         ])->onlyInput('email');
     }
+
     // Menampilkan halaman form register
     public function showRegisterForm()
     {
@@ -56,9 +75,9 @@ class AuthController
         ]);
 
         $user = User::create([
-            'nama' => $validated['nama'], // Pastikan 'nama'
+            'nama' => $validated['nama'],
             'email' => $validated['email'],
-            'nomor_telepon' => $validated['nomor_telepon'], // Pastikan 'nomor_telepon'
+            'nomor_telepon' => $validated['nomor_telepon'],
             'password' => Hash::make($validated['password']),
             'peran' => 'pengemudi',
             'status_akun' => 'aktif',

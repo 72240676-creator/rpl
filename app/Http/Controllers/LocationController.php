@@ -36,16 +36,22 @@ class LocationController extends Controller
         $request->validate([
             'nama_lokasi' => 'required|string|max:255',
             'alamat' => 'required|string',
-            'latitude' => 'required|numeric',
-            'longitude' => 'required|numeric',
+            'latitude' => 'required',
+            'longitude' => 'required',
             'jam_operasional' => 'required|string',
-            'fasilitas' => 'nullable|string',
-            'status' => 'required|in:aktif,tutup_sementara,penuh,dalam_perawatan',
+            'status' => 'required|in:aktif,tutup sementara,penuh,dalam perawatan',
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
-        Location::create($request->all());
+        $data = $request->all();
 
-        return back()->with('success', 'Stasiun SPKLU berhasil didaftarkan!');
+        if ($request->hasFile('foto')) {
+            $data['foto'] = $request->file('foto')->store('stations', 'public');
+        }
+
+        Location::create($data);
+
+        return redirect()->back()->with('success', 'Stasiun SPKLU berhasil ditambahkan!');
     }
 
     // Mengubah status atau data lokasi

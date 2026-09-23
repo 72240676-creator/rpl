@@ -2,10 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Location extends Model
 {
+    use HasFactory;
+
     protected $primaryKey = 'id_location';
 
     protected $fillable = [
@@ -15,11 +19,10 @@ class Location extends Model
         'longitude',
         'jam_operasional',
         'fasilitas',
-        'status'
+        'status',
     ];
 
-    // Relasi ke Charger (jika nanti dibutuhkan)
-    public function chargers()
+    public function chargers(): HasMany
     {
         return $this->hasMany(Charger::class, 'id_location', 'id_location');
     }

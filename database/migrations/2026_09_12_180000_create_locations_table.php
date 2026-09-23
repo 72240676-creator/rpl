@@ -12,11 +12,12 @@ return new class extends Migration
             $table->id('id_location');
             $table->string('nama_lokasi');
             $table->text('alamat');
-            $table->decimal('latitude', 10, 8);
-            $table->decimal('longitude', 11, 8);
+            $table->decimal('latitude', 10, 7);
+            $table->decimal('longitude', 10, 7);
             $table->string('jam_operasional')->default('24 Jam');
             $table->text('fasilitas')->nullable();
-            $table->enum('status', ['aktif', 'tutup_sementara', 'penuh', 'dalam_perawatan'])->default('aktif');
+            $table->string('foto')->nullable();
+            $table->enum('status', ['aktif', 'tutup_sementara', 'penuh', 'perawatan'])->default('aktif');
             $table->timestamps();
         });
     }

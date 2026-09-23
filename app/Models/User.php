@@ -28,6 +28,7 @@ class User extends Authenticatable
         'nomor_telepon',
         'peran',
         'status_akun',
+        'role',
     ];
 
     /**

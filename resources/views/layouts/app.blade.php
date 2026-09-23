@@ -15,9 +15,8 @@
             margin: 0;
             padding: 0;
             font-family: 'Inter', sans-serif;
-            /* Background abu-abu keputihan yang sangat lembut dan elegan */
             background-color: #f8fafc; 
-            color: #334155; /* Teks abu-abu gelap, lebih lembut dari hitam murni */
+            color: #334155;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -28,10 +27,10 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.03); /* Bayangan sangat halus */
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.03);
         }
         .brand-container { display: flex; align-items: baseline; gap: 12px; }
-        .brand-logo { font-size: 24px; font-weight: 700; color: #059669; margin: 0; } /* Hijau Zamrud */
+        .brand-logo { font-size: 24px; font-weight: 700; color: #059669; margin: 0; }
         .brand-team { font-size: 12px; font-weight: 600; color: #94a3b8; letter-spacing: 1.5px; text-transform: uppercase; }
         main { flex: 1; display: flex; justify-content: center; align-items: center; padding: 20px; }
 
@@ -44,7 +43,6 @@
             padding: 40px;
             width: 100%;
             max-width: 450px;
-            /* Bayangan menyebar untuk efek kartu yang melayang elegan */
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05); 
             text-align: center;
             border: 1px solid #f1f5f9;
@@ -70,7 +68,6 @@
             box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.1); 
         }
         
-        /* Tombol Utama (Solid Green) */
         .btn-submit { 
             width: 100%; 
             padding: 14px; 
@@ -90,7 +87,6 @@
         .login-link { display: block; margin-top: 20px; color: #64748b; font-size: 14px; text-decoration: none; }
         .login-link span { color: #059669; font-weight: 600; }
         
-        /* Tombol Outline & Garis Pemisah */
         .divider { margin: 25px 0 15px 0; border-top: 1px solid #e2e8f0; }
         .btn-outline { 
             display: block; 
@@ -107,6 +103,7 @@
             box-sizing: border-box; 
         }
         .btn-outline:hover { background: #f0fdf4; }
+
         /* =========================================
            3. DASHBOARD (Mobile First - Layar HP)
            ========================================= */
@@ -114,11 +111,11 @@
             background: #f8fafc;
             border-radius: 24px;
             width: 100%;
-            max-width: 480px; /* Lebar default untuk HP */
+            max-width: 480px;
             box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1);
             overflow: hidden;
             position: relative;
-            border: 8px solid #ffffff; /* Efek Bezel HP */
+            border: 8px solid #ffffff;
         }
         .dash-header { padding: 25px 25px 15px; background: #ffffff; border-radius: 0 0 24px 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); margin-bottom: 20px; }
         .dash-title { font-size: 18px; color: #1e293b; margin: 0 0 5px 0; font-weight: 700; text-transform: capitalize; }
@@ -165,29 +162,25 @@
             .dash-header { display: flex; justify-content: space-between; align-items: center; padding: 30px 40px 25px; }
             .stats-row { margin-top: 0; width: 450px; gap: 15px; }
             
-            /* 1. Susun Utama ke Bawah & Rentangkan Penuh */
             .dash-body {
                 padding: 10px 40px 100px 40px;
                 display: flex;
-                flex-direction: column; /* Menyusun elemen dari atas ke bawah */
-                align-items: stretch; /* Memaksa elemen melebar full ke kanan-kiri */
+                flex-direction: column;
+                align-items: stretch;
                 gap: 25px;
             }
             
-            /* 2. Banner EV (Baris Atas) */
             .ev-banner { text-align: left; display: flex; justify-content: space-between; align-items: center; padding: 30px 40px; }
             .ev-banner p { margin-bottom: 0; font-size: 14px; }
             .ev-banner h3 { font-size: 18px; margin-bottom: 10px; }
             .ev-banner button { font-size: 15px; padding: 12px 30px; }
             
-            /* 3. Kartu Lokasi (Baris Tengah) - Dibuat memanjang ke samping */
             .location-card { flex-direction: row; align-items: center; justify-content: space-between; padding: 25px 40px; margin-bottom: 0; }
             .btn-cari { width: auto; padding: 12px 30px; font-size: 14px; }
 
-            /* 4. Bagian Layanan (Baris Bawah) */
             .services-title { font-size: 18px; margin-bottom: 20px; }
-            .services-grid { display: flex; gap: 20px; } /* Mengubah grid menjadi flex agar bisa dijajarkan rapi */
-            .service-item { flex: 1; max-width: 160px; padding: 30px 10px; } /* Tombol menu dibatasi lebarnya agar tidak terlalu melar */
+            .services-grid { display: flex; gap: 20px; }
+            .service-item { flex: 1; max-width: 160px; padding: 30px 10px; }
             .service-icon { font-size: 32px; }
             .service-name { font-size: 13px; }
 
@@ -200,7 +193,7 @@
                 font-size: 16px;
             }
         }
-        /* Tombol Profil di Navbar */
+        
         .nav-profile-btn {
             background: rgba(16, 185, 129, 0.1);
             color: #059669;
@@ -219,6 +212,26 @@
             background: #10b981;
             color: #ffffff;
         }
+
+        /* Style khusus untuk tombol Admin */
+        .nav-admin-btn {
+            background: rgba(37, 99, 235, 0.1);
+            color: #2563eb;
+            border: 1px solid #3b82f6;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.3s;
+        }
+        .nav-admin-btn:hover {
+            background: #2563eb;
+            color: #ffffff;
+        }
     </style>
 </head>
 <body>
@@ -229,20 +242,27 @@
             <span class="brand-team">By SUMBER JAYA REJEKI</span>
         </div>
 
-        <!-- Tombol Profil & Logout (Hanya tampil jika user sudah login) -->
+        <!-- Tombol Navigasi (Hanya tampil jika user sudah login) -->
         @auth
             <div style="display: flex; align-items: center; gap: 12px;">
-                <!-- Tombol Notifikasi (Fitur No. 6) -->
-                <a href="/notifications" class="nav-profile-btn">
-                    <span>🔔</span> Pemberitahuan
-                </a>
+                
+                @if(auth()->user()->peran === 'admin')
+                    <!-- TAMPILAN KHUSUS ADMIN -->
+                    <a href="{{ route('admin.stations.index') }}" class="nav-admin-btn">
+                        <span>⚙️</span> Kelola SPKLU (Admin)
+                    </a>
+                @else
+                    <!-- TAMPILAN KHUSUS USER BIASA -->
+                    <a href="/notifications" class="nav-profile-btn">
+                        <span>🔔</span> Pemberitahuan
+                    </a>
 
-                <!-- Tombol Profil -->
-                <a href="/profile" class="nav-profile-btn">
-                    <span>👤</span> Profil & Kendaraan
-                </a>
+                    <a href="/profile" class="nav-profile-btn">
+                        <span>👤</span> Profil & Kendaraan
+                    </a>
+                @endif
 
-                <!-- Tombol Logout -->
+                <!-- Tombol Logout (Tampil untuk Admin & User) -->
                 <form action="/logout" method="POST" style="margin: 0;">
                     @csrf
                     <button type="submit" style="background: rgba(239, 68, 68, 0.1); color: #dc2626; border: 1px solid #ef4444; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.3s;" onmouseover="this.style.background='#ef4444'; this.style.color='#fff';" onmouseout="this.style.background='rgba(239, 68, 68, 0.1)'; this.style.color='#dc2626';">
