@@ -8,7 +8,7 @@ use App\Models\Charger;
 use Illuminate\Http\Request;
 
 class ChargingSessionController extends Controller
-{
+ {
     /**
      * Memulai charging session.
      */
