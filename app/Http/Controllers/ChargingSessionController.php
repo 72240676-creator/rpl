@@ -6,7 +6,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Models\ChargingSession;
 use App\Models\Charger;
-use App\Models\User;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
 
@@ -15,10 +14,10 @@ class ChargingSessionController extends Controller
     /**
      * Memulai charging session.
      */
-   public function start(Request $request)
+    public function start(Request $request)
     {
         $request->validate([
-            'charger_id' => 'required',
+            'charger_id' => 'required|exists:chargers,id',
         ]);
 
         /** @var \App\Models\User $user */
@@ -37,8 +36,8 @@ class ChargingSessionController extends Controller
                 ->with('error', 'Anda masih memiliki sesi pengisian yang sedang berjalan.');
         }
 
-        // Cari charger murni menggunakan id_charger
-        $charger = Charger::where('id_charger', $request->charger_id)->first();
+        // Cari charger berdasarkan primary key "id"
+        $charger = Charger::where('id', $request->charger_id)->first();
 
         if (!$charger) {
             return back()->with('error', 'Unit charger tidak ditemukan.');
@@ -54,7 +53,7 @@ class ChargingSessionController extends Controller
         // Buat charging session baru
         $session = new ChargingSession();
         $session->user_id = $userId;
-        $session->charger_id = $charger->id_charger;
+        $session->charger_id = $charger->id;
         $session->vehicle_id = $vehicle->id_vehicle ?? $vehicle->id;
         $session->start_time = now();
         $session->end_time = null;
@@ -63,8 +62,11 @@ class ChargingSessionController extends Controller
         $session->status = 'ongoing';
         $session->save();
 
-        return redirect()->route('charging.session', $session->id);
+        return redirect()
+            ->route('charging.session', $session->id)
+            ->with('success', 'Pengisian daya berhasil dimulai!');
     }
+
     /**
      * Menampilkan halaman monitoring charging.
      */
@@ -74,27 +76,31 @@ class ChargingSessionController extends Controller
         $user = Auth::user();
         $userId = $user->id_user ?? $user->id;
 
+        // Pastikan session milik user yang login
         if ($session->user_id != $userId) {
             abort(403);
         }
 
-        // Ambil charger hanya berdasarkan id_charger atau lewat relasi Eloquent
-        $charger = Charger::where('id_charger', $session->charger_id)->first() ?? $session->charger;
+        // Cari charger berdasarkan kolom "id"
+        $charger = Charger::where('id', $session->charger_id)->first()
+            ?? $session->charger;
 
         return view('chargingsession', compact('session', 'charger'));
     }
+
     /**
-     * Menghentikan charging session (menghitung tagihan).
+     * Menghentikan charging session dan menghitung tagihan.
      */
     public function stop(ChargingSession $session)
     {
         $userId = Auth::user()->id_user ?? Auth::id();
 
+        // Pastikan session milik user yang login
         if ($session->user_id != $userId) {
             abort(403);
         }
 
-        // Jika sudah selesai sebelumnya, langsung arahkan ke halaman pembayaran
+        // Jika sudah selesai
         if (strtolower($session->status) !== 'ongoing' && !is_null($session->end_time)) {
             return redirect()
                 ->route('charging.payment.view', $session->id)
@@ -102,15 +108,26 @@ class ChargingSessionController extends Controller
         }
 
         $endTime = now();
+
+        // Hitung durasi
         $durationSeconds = $session->start_time->diffInSeconds($endTime);
+        $durationHours = $durationSeconds / 3600;
+
+        // Ambil charger
         $charger = Charger::findOrFail($session->charger_id);
 
-        // Perhitungan energi (kWh) & biaya
-        $durationHours = $durationSeconds / 3600;
-        $energyConsumed = max(0.01, $durationHours * $charger->max_power_kw);
-        $totalCost = round($energyConsumed * $charger->price_per_kwh);
+        // Hitung energi
+        $energyConsumed = max(
+            0.01,
+            $durationHours * $charger->max_power_kw
+        );
 
-        // Update session menjadi selesai
+        // Hitung biaya
+        $totalCost = round(
+            $energyConsumed * $charger->price_per_kwh
+        );
+
+        // Update session
         $session->update([
             'end_time' => $endTime,
             'energy_consumed_kwh' => round($energyConsumed, 3),
@@ -118,79 +135,138 @@ class ChargingSessionController extends Controller
             'status' => 'completed',
         ]);
 
-        // 🚀 Ubah tujuan redirect ke halaman/form rincian pembayaran
+        // Arahkan ke halaman pembayaran
         return redirect()
             ->route('charging.payment.view', $session->id)
-            ->with('success', 'Pengisian daya dihentikan. Silakan lakukan pembayaran.');
+            ->with(
+                'success',
+                'Pengisian daya dihentikan. Silakan lakukan pembayaran.'
+            );
     }
 
     /**
-     * Proses eksekusi pembayaran saldo E-Wallet.
+     * Proses pembayaran menggunakan saldo E-Wallet.
      */
-   public function pay(ChargingSession $session)
+    public function pay(ChargingSession $session)
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
         $userId = $user->id_user ?? $user->id;
 
-        // 1. Cek Kepemilikan Sesi Charging
+        // Pastikan session milik user yang login
         if ($session->user_id != $userId) {
-            return back()->with('error', 'Gagal: Sesi ini milik user lain.');
+            return back()->with(
+                'error',
+                'Gagal: Sesi ini milik user lain.'
+            );
         }
 
-        // 2. Cek Jika Status Tagihan Sudah Lunas
+        // Jika sudah dibayar
         if ($session->status === 'paid') {
-            return redirect()->route('dashboard')->with('info', 'Tagihan ini sudah dibayar sebelumnya.');
+            return redirect()
+                ->route('charging.invoice', $session->id)
+                ->with(
+                    'info',
+                    'Tagihan ini sudah dibayar sebelumnya.'
+                );
         }
 
-        // 3. Konversi dan Cek Saldo User
+        // Ambil saldo dan total biaya
         $saldoUser = (float) $user->saldo;
         $totalCost = (float) $session->total_cost;
 
+        // Cek saldo
         if ($saldoUser < $totalCost) {
-            return back()->with('error', 'Saldo tidak mencukupi! Saldo Anda: Rp ' . number_format($saldoUser, 0, ',', '.') . ', Tagihan: Rp ' . number_format($totalCost, 0, ',', '.'));
+            return back()->with(
+                'error',
+                'Saldo tidak mencukupi! Saldo Anda: Rp ' .
+                number_format($saldoUser, 0, ',', '.') .
+                ', Tagihan: Rp ' .
+                number_format($totalCost, 0, ',', '.')
+            );
         }
 
-        // 4. Eksekusi Pembayaran menggunakan DB Transaction
+        // Jalankan pembayaran dalam database transaction
         DB::beginTransaction();
+
         try {
-            // Potong Saldo User
+            // Potong saldo
             $user->saldo = $saldoUser - $totalCost;
             $user->save();
 
-            // Update Status Sesi Pengisian menjadi paid
+            // Ubah status session menjadi paid
             $session->status = 'paid';
             $session->save();
 
+            // Buat nomor invoice
+            $invoiceNumber = 'INV-CHG-' .
+                date('Ymd') . '-' .
+                str_pad($session->id, 5, '0', STR_PAD_LEFT);
+
+            // Buat transaksi pembayaran
+            Transaction::create([
+                'session_id' => $session->id,
+                'invoice_number' => $invoiceNumber,
+                'payment_method' => 'e-wallet',
+                'amount' => $totalCost,
+                'type' => 'payment',
+                'status' => 'success',
+                'paid_at' => now(),
+            ]);
+
             DB::commit();
 
-            return redirect()->route('dashboard')->with('success', 'Pembayaran sebesar Rp ' . number_format($totalCost, 0, ',', '.') . ' berhasil!');
+            // Setelah pembayaran berhasil, langsung menuju Invoice
+            return redirect()
+                ->route('charging.invoice', $session->id)
+                ->with(
+                    'success',
+                    'Pembayaran sebesar Rp ' .
+                    number_format($totalCost, 0, ',', '.') .
+                    ' berhasil!'
+                );
 
         } catch (\Exception $e) {
+
             DB::rollBack();
-            return back()->with('error', 'Gagal Database: ' . $e->getMessage());
+
+            return back()->with(
+                'error',
+                'Gagal Database: ' . $e->getMessage()
+            );
         }
     }
+
     /**
      * Menampilkan halaman Review Pembayaran.
      */
     public function paymentView(ChargingSession $session)
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         $userId = $user->id_user ?? $user->id;
 
+        // Pastikan session milik user yang login
         if ($session->user_id != $userId) {
             abort(403);
         }
 
+        // Jika sudah dibayar
         if ($session->status === 'paid') {
             return redirect()
-                ->route('charging.session', $session->id)
-                ->with('error', 'Sesi ini sudah dibayar.');
+                ->route('charging.invoice', $session->id)
+                ->with(
+                    'info',
+                    'Sesi ini sudah dibayar.'
+                );
         }
 
+        // Ambil charger berdasarkan id
         $charger = Charger::findOrFail($session->charger_id);
 
-        return view('payment', compact('session', 'charger'));
+        return view(
+            'payment',
+            compact('session', 'charger')
+        );
     }
 }

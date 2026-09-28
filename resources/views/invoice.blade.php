@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+
+    <title>Invoice Charging</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 30px;
+        }
+
+        .invoice {
+            max-width: 700px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            margin-bottom: 5px;
+        }
+
+        .success {
+            text-align: center;
+            padding: 12px;
+            background: #e8f7ee;
+            color: #198754;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            font-weight: bold;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .total {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        .actions {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 20px;
+            background: #198754;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="invoice">
+
+    <div class="header">
+        <h1>INVOICE</h1>
+        <p>EV Charging</p>
+    </div>
+
+    <div class="success">
+        PEMBAYARAN BERHASIL
+    </div>
+
+    <div class="row">
+        <span>No. Invoice</span>
+        <strong>{{ $transaction->invoice_number }}</strong>
+    </div>
+
+    <div class="row">
+        <span>Session</span>
+        <strong>#{{ $session->id }}</strong>
+    </div>
+
+    <div class="row">
+        <span>Metode Pembayaran</span>
+        <strong>{{ $transaction->payment_method }}</strong>
+    </div>
+
+    <div class="row">
+        <span>Status</span>
+        <strong>LUNAS</strong>
+    </div>
+
+    <br>
+
+    <h3>Detail Charging</h3>
+
+    <div class="row">
+        <span>Mulai</span>
+        <span>{{ $session->start_time }}</span>
+    </div>
+
+    <div class="row">
+        <span>Selesai</span>
+        <span>{{ $session->end_time }}</span>
+    </div>
+
+    <div class="row">
+        <span>Energi</span>
+        <span>{{ $session->energy_consumed_kwh }} kWh</span>
+    </div>
+
+    <div class="row total">
+        <span>Total Pembayaran</span>
+        <span>
+            Rp {{ number_format($transaction->amount, 0, ',', '.') }}
+        </span>
+    </div>
+
+    <div class="actions">
+        <a
+            href="{{ route('charging.invoice.pdf', $session->id) }}"
+            class="btn"
+        >
+            📄 Download Invoice PDF
+        </a>
+    </div>
+
+</div>
+
+</body>
+</html>

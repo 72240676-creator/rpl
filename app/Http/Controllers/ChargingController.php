@@ -37,7 +37,7 @@ class ChargingController extends Controller
     {
         // Validasi: Pastikan charger_id yang dikirim benar-benar ada di kolom id_charger tabel chargers
         $request->validate([
-            'charger_id' => 'required|exists:chargers,id_charger', 
+            'charger_id' => 'required|exists:chargers,id', 
         ], [
             'charger_id.exists' => 'Charger yang Anda pilih tidak tersedia di database.',
         ]);
@@ -53,13 +53,15 @@ class ChargingController extends Controller
 
         // Simpan sesi pengisian daya dengan data dinamis yang valid
         $session = \App\Models\ChargingSession::create([
-            'user_id'    => Auth::id(), // Akan otomatis mengambil id_user karena sudah diset di User.php
-            'vehicle_id' => $vehicle->id_vehicle ?? $vehicle->id, // Menyesuaikan dengan primary key Vehicle Anda
+            'user_id' => Auth::id(),
+            'vehicle_id' => $vehicle->id_vehicle ?? $vehicle->id,
             'charger_id' => $request->charger_id,
-            'status'     => 1, // Angka 1 mewakili status aktif
+            'status' => 'ongoing',
             'start_time' => now(),
+            'end_time' => null,
+            'energy_consumed_kwh' => 0,
+            'total_cost' => 0,
         ]);
-
         return redirect()->route('charging.session', $session->id)
                          ->with('success', 'Pengisian daya berhasil dimulai!');
     }
