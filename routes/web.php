@@ -42,9 +42,11 @@ Route::middleware('auth')->group(function () {
         $nearestLocation = Location::where('status', 'aktif')->first();
         return view('dashboard', compact('nearestLocation'));
     })->name('dashboard');
+    
     // Rute Top Up Saldo E-Wallet
     Route::get('/topup', [WalletController::class, 'index'])->name('topup.index');
     Route::post('/topup', [WalletController::class, 'store'])->name('topup.store');
+    
     // Rute Profile & Kendaraan
     Route::get('/profile', [ProfileController::class, 'index']);
     Route::post('/profile/vehicle', [ProfileController::class, 'storeVehicle']);
@@ -67,12 +69,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/scan-charge', [ChargingController::class, 'scan'])->name('scan.charge');
     Route::post('/scan-charge/process', [ChargingController::class, 'processScan'])->name('scan.charge.process');
     Route::get('/scan-charge/{charger}', [ChargingController::class, 'show'])->name('scan.charge.show');
-
-    // Tombol Start & Stop Charge (Milik Teman Anda)
-    Route::post('/charging/start', [ChargingSessionController::class, 'start'])->name('charging.start');
+    Route::post('/charging/session/{id}/resume', [ChargingSessionController::class, 'resume'])->name('charging.resume');
+    // Tombol Start & Stop Charge (Diubah ke ChargingController sesuai fungsi yang Anda buat)
+    Route::post('/charging/start', [ChargingController::class, 'start'])->name('charging.start');
     Route::get('/charging/session/{session}', [ChargingSessionController::class, 'show'])->name('charging.session');
     Route::post('/charging/session/{session}/stop', [ChargingSessionController::class, 'stop'])->name('charging.stop');
-
+    Route::post('/charging/pay/{session}', [ChargingSessionController::class, 'pay'])->name('charging.pay');
+    // Rute untuk menampilkan halaman khusus Review Pembayaran
+    Route::get('/charging/session/{session}/payment', [App\Http\Controllers\ChargingSessionController::class, 'paymentView'])->name('charging.payment.view');
+    // Rute aksi proses bayar (yang sudah ada)
+    Route::post('/charging/pay/{session}', [App\Http\Controllers\ChargingSessionController::class, 'pay'])->name('charging.pay');
     // Khusus Admin (Diproteksi AdminMiddleware - Milik Anda)
     Route::middleware([AdminMiddleware::class])->prefix('admin')->name('admin.')->group(function () {
         // Management Location/Stasiun

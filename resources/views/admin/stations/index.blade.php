@@ -172,28 +172,41 @@
         <!-- FORM TAMBAH CHARGER BARU -->
         <form id="chargerForm" method="POST" style="background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
             @csrf
+            
+            <!-- 1. Input Hidden ID Lokasi (Diisi otomatis via JavaScript) -->
             <input type="hidden" name="location_id" id="modal_location_id">
+
+            <!-- 2. Input Hidden Harga per kWh (Memenuhi validasi price_per_kwh required) -->
+            <input type="hidden" name="price_per_kwh" value="2500">
+
             <h4 style="margin: 0 0 12px 0; font-size: 13px; color: #334155;">+ Tambah Unit Charger Baru</h4>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
-                <input type="text" name="nomor_perangkat" placeholder="No. Perangkat (Contoh: CHG-01)" required style="padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px;">
-                <select name="tipe_konektor" required style="padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; background: white;">
+                <!-- Disesuaikan ke device_number -->
+                <input type="text" name="device_number" placeholder="No. Perangkat (Contoh: CHG-01)" required style="padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px;">
+                
+                <!-- Disesuaikan ke connector_type -->
+                <select name="connector_type" required style="padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; background: white;">
                     <option value="">-- Pilih Konektor --</option>
                     <option value="CCS2">CCS2 (Fast Charging)</option>
                     <option value="Type 2">Type 2 (AC)</option>
                     <option value="CHAdeMO">CHAdeMO</option>
+                    <option value="GB/T">GB/T</option>
                 </select>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px;">
-                <input type="number" name="kapasitas_daya" placeholder="Daya (kW)" required style="padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px;">
+                <!-- Disesuaikan ke max_power_kw -->
+                <input type="number" step="0.01" name="max_power_kw" placeholder="Daya (kW)" required style="padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px;">
                 
-                <select name="status_koneksi" style="padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; background: white;">
-                    <option value="online">Online</option>
-                    <option value="offline">Offline</option>
+                <!-- Disesuaikan ke is_online (Nilai 1 = Online, 0 = Offline) -->
+                <select name="is_online" style="padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; background: white;">
+                    <option value="1">Online</option>
+                    <option value="0">Offline</option>
                 </select>
 
-                <select name="status_penggunaan" style="padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; background: white;">
+                <!-- Disesuaikan ke status -->
+                <select name="status" style="padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; background: white;">
                     <option value="tersedia">Tersedia</option>
                     <option value="digunakan">Digunakan</option>
                     <option value="rusak">Rusak</option>
