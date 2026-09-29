@@ -25,6 +25,39 @@
         max-width: 700px;
     ">
 
+        <!-- BLOK NOTIFIKASI ERROR (Akan muncul jika validasi controller gagal) -->
+        @if (session('error'))
+            <div style="
+                background-color: #fef2f2;
+                border: 1px solid #fecaca;
+                color: #991b1b;
+                padding: 14px 18px;
+                border-radius: 12px;
+                margin-bottom: 20px;
+                font-size: 14px;
+            ">
+                ⚠️ {{ session('error') }}
+            </div>
+        @endif
+
+        @if ($errors->any())
+            <div style="
+                background-color: #fef2f2;
+                border: 1px solid #fecaca;
+                color: #991b1b;
+                padding: 14px 18px;
+                border-radius: 12px;
+                margin-bottom: 20px;
+                font-size: 14px;
+            ">
+                <ul style="margin: 0; padding-left: 18px;">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <div style="
             width: 70px;
             height: 70px;
@@ -44,7 +77,7 @@
             color: #0f172a;
             font-size: 24px;
         ">
-            Charger #{{ $charger }}
+            Charger #{{ is_object($charger) ? ($charger->id_charger ?? $charger->id) : $charger }}
         </h3>
 
         <p style="
@@ -71,7 +104,7 @@
                 </span>
 
                 <strong style="color: #0f172a;">
-                    #{{ $charger }}
+                    #{{ is_object($charger) ? ($charger->id_charger ?? $charger->id) : $charger }}
                 </strong>
             </div>
 
@@ -131,19 +164,20 @@
         ">
 
             {{-- Form untuk Memulai Pengisian Daya --}}
-            <form action="{{ route('charging.start') }}" method="POST" style="margin: 0;">
+            <form id="startChargingForm" action="{{ route('charging.start') }}" method="POST" style="margin: 0;">
                 @csrf
-                <input type="hidden" name="charger_id" value="{{ $charger }}">
+                <!-- Memastikan hanya ID angka yang terkirim, baik jika $charger berupa integer maupun Object -->
+                <input type="hidden" name="charger_id" value="{{ is_object($charger) ? ($charger->id_charger ?? $charger->id) : $charger }}">
 
                 <button
                     type="submit"
+                    id="btnMulai"
                     style="
                         background: #059669;
                         color: white;
                         padding: 13px 25px;
                         border: none;
                         border-radius: 12px;
-                        text-decoration: none;
                         font-weight: 700;
                         font-size: 14px;
                         cursor: pointer;

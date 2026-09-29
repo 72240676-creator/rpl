@@ -86,7 +86,7 @@ class StationController extends Controller
         return redirect()->back()->with('success', 'Perangkat charger berhasil ditambahkan!');
     }
 
-    public function destroyCharger($id_charger)
+    public function destroyCharger(int $id_charger)
     {
         Charger::findOrFail($id_charger)->delete();
         return redirect()->back()->with('success', 'Charger berhasil dihapus!');

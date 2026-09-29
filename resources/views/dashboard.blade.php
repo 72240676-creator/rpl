@@ -4,7 +4,33 @@
 
 @section('content')
 <div class="dashboard-container">
-    
+    <!-- Notifikasi Sukses -->
+    @if (session('success'))
+        <div id="toast-success" style="background: #ecfdf5; border-left: 5px solid #10b981; padding: 15px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; animation: slideDown 0.3s ease;">
+            <div style="color: #065f46; font-weight: 500;">
+                ✅ {{ session('success') }}
+            </div>
+            <button onclick="this.parentElement.style.display='none'" style="background: none; border: none; font-size: 18px; color: #065f46; cursor: pointer;">✕</button>
+        </div>
+    @endif
+
+    <!-- Notifikasi Error (Misal saldo tidak cukup) -->
+    @if (session('error'))
+        <div id="toast-error" style="background: #fef2f2; border-left: 5px solid #ef4444; padding: 15px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; animation: slideDown 0.3s ease;">
+            <div style="color: #991b1b; font-weight: 500;">
+                ❌ {{ session('error') }}
+            </div>
+            <button onclick="this.parentElement.style.display='none'" style="background: none; border: none; font-size: 18px; color: #991b1b; cursor: pointer;">✕</button>
+        </div>
+    @endif
+
+    <!-- Animasi Notifikasi -->
+    <style>
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
     <!-- Bagian Header -->
     <div class="dash-header">
         <div>
@@ -139,20 +165,13 @@
         
     </div>
 
-<<<<<<< HEAD
-    <!-- Tombol Mengambang / Scan Barcode -->
-    <button class="floating-scan">
-        <span style="font-size: 20px;">📷</span> Scan / Charge EV
-    </button>
-=======
-    //tombol scan barcode
+    <!-- Tombol Scan Barcode -->
     <a href="{{ route('scan.charge') }}"
     class="floating-scan"
     style="text-decoration: none; cursor: pointer;">
         <span style="font-size: 20px;">📷</span>
         Scan / Charge EV
     </a>
->>>>>>> 0ca36b79a6200b4e5f27905baa1fbc4ba7c56ca3
     
 </div>
 @endsection

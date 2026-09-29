@@ -10,7 +10,8 @@ class Charger extends Model
 {
     use HasFactory;
 
-    
+    protected $table = 'chargers';
+protected $primaryKey = 'id_charger';
 
     protected $fillable = [
         'id_location',
