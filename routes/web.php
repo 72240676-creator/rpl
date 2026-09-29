@@ -78,6 +78,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/charging/session/{session}', [ChargingSessionController::class, 'show'])->name('charging.session');
     Route::post('/charging/session/{session}/stop', [ChargingSessionController::class, 'stop'])->name('charging.stop');
 
+    // FR-07 - Riwayat Transaksi & Sesi Pengguna
+    Route::get('/riwayat', [ChargingSessionController::class, 'history'])->name('charging.history');
+
     // Rute untuk menampilkan halaman khusus Review Pembayaran
     Route::get('/charging/session/{session}/payment', [ChargingSessionController::class, 'paymentView'])->name('charging.payment.view');
 

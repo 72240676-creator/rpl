@@ -15,13 +15,14 @@ class User extends Authenticatable
     protected $primaryKey = 'id_user'; // Definisikan primary key kustom
 
     protected $fillable = [
-        'nama',
-        'email',
-        'password',
-        'nomor_telepon',
-        'peran',
-        'status_akun',
-    ];
+    'nama',
+    'email',
+    'password',
+    'nomor_telepon',
+    'peran',
+    'status_akun',
+    'saldo',
+];
 
     protected $hidden = [
         'password',
@@ -29,10 +30,10 @@ class User extends Authenticatable
     ];
 
     protected $casts = [
-        'email_verified_at' => 'datetime',
-        'password' => 'hashed',
-    ];
-
+    'email_verified_at' => 'datetime',
+    'password' => 'hashed',
+    'saldo' => 'decimal:2',
+];
     /**
      * Relasi ke model Vehicle (Kendaraan milik user)
      */

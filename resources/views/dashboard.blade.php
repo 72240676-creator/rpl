@@ -38,6 +38,17 @@
             <h2 class="dash-title">Selamat datang, {{ auth()->user()->nama }}</h2>
             <p class="dash-subtitle">Siap mengisi daya kendaraanmu hari ini?</p>
         </div>
+        <!-- Tombol Riwayat -->
+        <a href="{{ route('charging.history') }}"
+        style="text-decoration: none; display: flex; align-items: center; gap: 10px; background: #ffffff; padding: 12px 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.02); color: #1e293b;">
+            <div style="background: #ecfdf5; color: #059669; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px;">
+                📋
+            </div>
+            <div>
+                <span style="font-size: 11px; color: #64748b; display: block; font-weight: 500;">Aktivitas</span>
+                <span style="font-size: 15px; font-weight: 700; color: #1e293b;">Riwayat</span>
+            </div>
+        </a>
 
         <!-- Kapsul Saldo & Poin (Referensi MyPertamina/PLN) -->
         <div class="stats-row">
@@ -72,6 +83,7 @@
                 }
             }
         </script>
+        
             <div class="stat-pill">
                 <span>⚡</span> 0 Poin
             </div>

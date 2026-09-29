@@ -24,41 +24,42 @@ class ChargingSessionController extends Controller
     /**
      * Menghentikan sesi pengisian daya (Stop Charging).
      */
-    public function stop(Request $request, $id)
-    {
-        $session = ChargingSession::with(['charger', 'user'])->findOrFail($id);
+   public function stop(Request $request, $id)
+{
+    $session = ChargingSession::with(['charger', 'user'])->findOrFail($id);
 
-        if ($session->status === 'ongoing') {
-            $endTime = now();
-            $energyConsumed = $request->input('energy_consumed', 5.0);
-            $totalCost = $energyConsumed * ($session->charger->price_per_kwh ?? 0);
+    if ($session->status === 'ongoing') {
 
-            $session->update([
-                'end_time'            => $endTime,
-                'energy_consumed_kwh' => $energyConsumed,
-                'total_cost'          => $totalCost,
-                'status'              => 'completed',
-            ]);
+        $endTime = now();
 
-            // Notifikasi web ketika sesi charging selesai
-            \App\Models\Notification::create([
-                'user_id' => $session->user_id,
-                'title'   => 'Sesi Pengisian Daya Selesai',
-                'message' => 'Sesi charging pada ' . ($session->charger->name ?? 'Charger') . ' telah selesai. Total tagihan: Rp ' . number_format($totalCost, 0, ',', '.'),
-                'is_read' => false,
-            ]);
+        $durationHours = $session->start_time->diffInSeconds($endTime) / 3600;
 
-            // Notifikasi charging selesai
-            $user = Auth::user();
+        $energyConsumed = $durationHours * (float) $session->charger->max_power_kw;
 
-            if ($user) {
-                $user->notify(new ChargingFinishedNotification('charging_finished', $session));
-            }
-        }
+        $totalCost = $energyConsumed * (float) $session->charger->price_per_kwh;
 
-        return redirect()->route('charging.session', $id)
-                         ->with('success', 'Sesi pengisian daya berhasil dihentikan!');
+        // Potong saldo
+        $session->user->saldo -= $totalCost;
+        $session->user->save();
+
+        // Simpan hasil charging
+        $session->update([
+            'end_time' => $endTime,
+            'energy_consumed_kwh' => $energyConsumed,
+            'total_cost' => $totalCost,
+            'status' => 'completed',
+        ]);
+
+        // Charger tersedia lagi
+        $session->charger->update([
+            'status' => 'tersedia',
+        ]);
     }
+
+    return redirect()
+        ->route('charging.session', $id)
+        ->with('success', 'Charging selesai. Saldo berhasil dipotong.');
+}
 
     /**
      * Menampilkan halaman pembayaran untuk sesi charging.
@@ -96,5 +97,19 @@ class ChargingSessionController extends Controller
 
         return redirect()->route('charging.session', $id)
                          ->with('success', 'Pembayaran berhasil diproses dan invoice dikirim ke Gmail!');
+    }
+        /**
+     * Menampilkan riwayat charging user.
+     */
+    public function history()
+    {
+        $user = Auth::user();
+
+        $histories = ChargingSession::where('user_id', $user->id_user)
+            ->whereIn('status', ['completed', 'paid'])
+            ->orderBy('end_time', 'desc')
+            ->get();
+
+        return view('riwayat', compact('histories'));
     }
 }

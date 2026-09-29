@@ -4,6 +4,11 @@
 
 @section('content')
 
+<a href="{{ route('dashboard') }}"
+   style="display:inline-block; margin-bottom:20px; text-decoration:none;">
+    ← Kembali ke dashboard
+</a>
+
 <div style="
     padding: 30px;
     background: #f8fafc;
