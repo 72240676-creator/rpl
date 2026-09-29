@@ -11,11 +11,13 @@ class Charger extends Model
     use HasFactory;
 
     protected $table = 'chargers';
-
-    protected $primaryKey = 'id';
+    protected $primaryKey = 'id_charger';
+    public $incrementing = true;
+    protected $keyType = 'int';
 
     protected $fillable = [
-        'station_id',
+        'id_charger',
+        'id_location', // Sesuaikan dengan kolom migrasi chargers
         'device_number',
         'connector_type',
         'max_power_kw',
@@ -30,8 +32,8 @@ class Charger extends Model
         'is_online' => 'boolean',
     ];
 
-    public function station(): BelongsTo
+    public function location(): BelongsTo
     {
-        return $this->belongsTo(Station::class, 'station_id', 'id');
+        return $this->belongsTo(Location::class, 'id_location', 'id_location');
     }
 }

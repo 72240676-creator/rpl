@@ -72,8 +72,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/scan-charge/{charger}', [ChargingController::class, 'show'])->name('scan.charge.show');
     Route::post('/charging/session/{id}/resume', [ChargingSessionController::class, 'resume'])->name('charging.resume');
 
-    // Tombol Start & Stop Charge (Diubah ke ChargingController sesuai fungsi yang Anda buat)
-    Route::post('/charging/start', [ChargingController::class, 'start'])->name('charging.start');
+    // Tombol Start & Stop Charge (Diperbarui dengan parameter opsional {charger?})
+    Route::post('/charging/start/{charger?}', [ChargingController::class, 'start'])->name('charging.start');
+    
     Route::get('/charging/session/{session}', [ChargingSessionController::class, 'show'])->name('charging.session');
     Route::post('/charging/session/{session}/stop', [ChargingSessionController::class, 'stop'])->name('charging.stop');
 

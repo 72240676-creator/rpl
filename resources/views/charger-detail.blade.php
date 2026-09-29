@@ -25,7 +25,7 @@
         max-width: 700px;
     ">
 
-        <!-- BLOK NOTIFIKASI ERROR (Akan muncul jika validasi controller gagal) -->
+        <!-- BLOK NOTIFIKASI ERROR -->
         @if (session('error'))
             <div style="
                 background-color: #fef2f2;
@@ -72,12 +72,16 @@
             🔌
         </div>
 
+        @php
+            $chargerId = is_object($charger) ? ($charger->id_charger ?? $charger->id) : $charger;
+        @endphp
+
         <h3 style="
             margin: 0 0 8px 0;
             color: #0f172a;
             font-size: 24px;
         ">
-            Charger #{{ is_object($charger) ? ($charger->id_charger ?? $charger->id) : $charger }}
+            Charger #{{ $chargerId }}
         </h3>
 
         <p style="
@@ -104,7 +108,7 @@
                 </span>
 
                 <strong style="color: #0f172a;">
-                    #{{ is_object($charger) ? ($charger->id_charger ?? $charger->id) : $charger }}
+                    #{{ $chargerId }}
                 </strong>
             </div>
 
@@ -156,19 +160,42 @@
             💡 Pastikan kendaraan sudah terhubung dengan charger sebelum memulai pengisian daya.
         </div>
 
-        <div style="
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            align-items: center;
-        ">
+        {{-- Form Mulai Pengisian Lengkap dengan Pilihan Kendaraan --}}
+        <form id="startChargingForm" action="{{ route('charging.start', $chargerId) }}" method="POST" style="margin: 0; width: 100%;">
+            @csrf
+            <input type="hidden" name="charger_id" value="{{ $chargerId }}">
 
-            {{-- Form untuk Memulai Pengisian Daya --}}
-            <form id="startChargingForm" action="{{ route('charging.start') }}" method="POST" style="margin: 0;">
-                @csrf
-                <!-- Memastikan hanya ID angka yang terkirim, baik jika $charger berupa integer maupun Object -->
-                <input type="hidden" name="charger_id" value="{{ is_object($charger) ? ($charger->id_charger ?? $charger->id) : $charger }}">
+            {{-- Pilihan Kendaraan User --}}
+            <div style="margin-bottom: 20px;">
+                <label for="vehicle_id" style="display: block; margin-bottom: 8px; font-weight: 600; color: #0f172a; font-size: 14px;">
+                    Pilih Kendaraan untuk Charging:
+                </label>
+                <select name="vehicle_id" id="vehicle_id" required style="
+                    width: 100%;
+                    padding: 12px;
+                    border-radius: 12px;
+                    border: 1px solid #cbd5e1;
+                    background: #f8fafc;
+                    color: #0f172a;
+                    font-size: 14px;
+                ">
+                    <option value="">-- Pilih Kendaraan Anda --</option>
+                    @if(isset($vehicles) && count($vehicles) > 0)
+                        @foreach($vehicles as $vehicle)
+                            <option value="{{ $vehicle->id_vehicle }}">
+                                {{ $vehicle->merek }} {{ $vehicle->model }} ({{ $vehicle->nomor_polisi }})
+                            </option>
+                        @endforeach
+                    @endif
+                </select>
+            </div>
 
+            <div style="
+                display: flex;
+                gap: 12px;
+                flex-wrap: wrap;
+                align-items: center;
+            ">
                 <button
                     type="submit"
                     id="btnMulai"
@@ -188,22 +215,21 @@
                 >
                     ⚡ Mulai Pengisian
                 </button>
-            </form>
 
-            <a href="{{ route('scan.charge') }}"
-               style="
-                    background: #f1f5f9;
-                    color: #475569;
-                    padding: 13px 25px;
-                    border-radius: 12px;
-                    text-decoration: none;
-                    font-weight: 600;
-                    font-size: 14px;
-               ">
-                ← Scan Lagi
-            </a>
-
-        </div>
+                <a href="{{ route('scan.charge') }}"
+                   style="
+                        background: #f1f5f9;
+                        color: #475569;
+                        padding: 13px 25px;
+                        border-radius: 12px;
+                        text-decoration: none;
+                        font-weight: 600;
+                        font-size: 14px;
+                   ">
+                    ← Scan Lagi
+                </a>
+            </div>
+        </form>
 
     </div>
 

@@ -6,15 +6,18 @@ use Illuminate\Database\Eloquent\Model;
 
 class ChargingSession extends Model
 {
+   protected $table = 'charging_sessions';
+    protected $primaryKey = 'id'; // Sesuaikan jika primary key kamu berbeda
+
     protected $fillable = [
         'user_id',
-        'charger_id',
         'vehicle_id',
+        'charger_id', // <--- PASTIKAN BARIS INI ADA DI DALAM $fillable
+        'status',
         'start_time',
         'end_time',
         'energy_consumed_kwh',
         'total_cost',
-        'status',
     ];
 
     protected $casts = [
@@ -43,11 +46,10 @@ class ChargingSession extends Model
     {
         return $this->belongsTo(
             Charger::class,
-            'charger_id',
-            'id'
+            'charger_id', // Foreign key di tabel charging_sessions
+            'id_charger'  // Primary key di tabel chargers
         );
     }
-    
 
     /**
      * Kendaraan yang digunakan.
@@ -60,4 +62,6 @@ class ChargingSession extends Model
             'id_vehicle'
         );
     }
+
+    
 }
