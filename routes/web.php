@@ -9,6 +9,7 @@ use App\Http\Controllers\LocationController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ChargingController;
 use App\Http\Controllers\StationController;
+use App\Http\Controllers\WalletController;
 use App\Http\Middleware\AdminMiddleware;
 use App\Models\Location; 
 
@@ -41,7 +42,9 @@ Route::middleware('auth')->group(function () {
         $nearestLocation = Location::where('status', 'aktif')->first();
         return view('dashboard', compact('nearestLocation'));
     })->name('dashboard');
-
+    // Rute Top Up Saldo E-Wallet
+    Route::get('/topup', [WalletController::class, 'index'])->name('topup.index');
+    Route::post('/topup', [WalletController::class, 'store'])->name('topup.store');
     // Rute Profile & Kendaraan
     Route::get('/profile', [ProfileController::class, 'index']);
     Route::post('/profile/vehicle', [ProfileController::class, 'storeVehicle']);
