@@ -272,7 +272,7 @@
                     Tarif per kWh
                 </div>
                 <strong style="color: #0f172a;">
-                    Rp {{ number_format((float) $charger->price_per_kwh, 0, ',', '.') }}
+                    Rp {{ number_format((float) $session->charger->price_per_kwh, 0, ',', '.') }}
                 </strong>
             </div>
 
@@ -369,7 +369,7 @@
             </div>
             <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #64748b;">
                 <span>Tarif per kWh</span>
-                <span style="color: #0f172a; font-weight: 600;">Rp {{ number_format((float) $charger->price_per_kwh, 0, ',', '.') }}</span>
+                <span style="color: #0f172a; font-weight: 600;">Rp {{ number_format((float) ($session->charger->price_per_kwh ?? 0), 0, ',', '.') }} }}</span>
             </div>
         </div>
 
@@ -380,17 +380,12 @@
             </span>
         </div>
 
-        {{-- Tombol Aksi Pembayaran (Sesuaikan routenya jika ada halaman pembayaran khusus, misal: charging.pay) --}}
-        <form action="{{ route('charging.stop', $session->id) }}" method="POST"> <!-- Ganti route('charging.pay', ...) jika ada -->
-            @csrf
-            <!-- Tombol untuk Membuka Pop-up Pembayaran -->
-            <!-- KODE RINCIAN TAGIHAN ANDA (Tetap di sini) -->
-
-            <!-- Tombol Pindah Halaman Pembayaran -->
-            <a href="{{ route('charging.payment.view', $session->id) }}" style="display: block; text-align: center; width: 100%; padding: 15px; border-radius: 12px; background: #16a34a; color: white; font-size: 16px; font-weight: bold; text-decoration: none; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2); margin-top: 20px;">
-                💳 Lakukan Pembayaran Sekarang
-            </a>
-
+        {{-- Tombol Pindah Halaman Pembayaran --}}
+        <a href="{{ route('charging.payment.view', $session->id) }}" style="display: block; text-align: center; width: 100%; padding: 15px; border-radius: 12px; background: #16a34a; color: white; font-size: 16px; font-weight: bold; text-decoration: none; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2);">
+            💳 Lakukan Pembayaran Sekarang
+        </a>
+    </div>
+    @endif
             <!-- Script JavaScript untuk Kontrol Modal -->
             <script>
                 function openPaymentModal() {
@@ -411,7 +406,6 @@
             </script>
         </form>
     </div>
-    @endif
 
 
     {{-- Tombol Kembali --}}

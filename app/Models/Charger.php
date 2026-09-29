@@ -11,10 +11,13 @@ class Charger extends Model
     use HasFactory;
 
     protected $table = 'chargers';
-protected $primaryKey = 'id_charger';
+    protected $primaryKey = 'id_charger';
+    public $incrementing = true;
+    protected $keyType = 'int';
 
     protected $fillable = [
-        'id_location',
+        'id_charger',
+        'id_location', // Sesuaikan dengan kolom migrasi chargers
         'device_number',
         'connector_type',
         'max_power_kw',
@@ -24,9 +27,9 @@ protected $primaryKey = 'id_charger';
     ];
 
     protected $casts = [
-        'max_power_kw'  => 'decimal:2',
+        'max_power_kw' => 'decimal:2',
         'price_per_kwh' => 'decimal:2',
-        'is_online'     => 'boolean',
+        'is_online' => 'boolean',
     ];
 
     public function location(): BelongsTo
