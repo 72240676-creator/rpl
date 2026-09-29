@@ -1,19 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Charger Ditemukan')
+@section('title', 'Detail Charger')
 
 @section('content')
-
-<div style="padding: 30px;">
-
+<div style="padding: 30px; max-width: 800px; margin: auto;">
     <div style="margin-bottom: 25px;">
-        <h2 style="margin: 0 0 8px 0; color: #0f172a;">
-            Charger Ditemukan
-        </h2>
-
-        <p style="margin: 0; color: #64748b;">
-            QR Code berhasil mengidentifikasi unit charger.
-        </p>
+        <a href="{{ url()->previous() }}" style="text-decoration: none; color: #3b82f6; font-weight: 600;">← Kembali</a>
+        <h2 style="margin: 15px 0 8px 0; color: #0f172a;">Detail Unit Charger</h2>
+        <p style="margin: 0; color: #64748b;">Informasi spesifikasi dan status pengisi daya kendaraan listrik.</p>
     </div>
 
     <div style="
@@ -22,157 +16,57 @@
         padding: 30px;
         border: 1px solid #e2e8f0;
         box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-        max-width: 700px;
     ">
-
-        <div style="
-            width: 70px;
-            height: 70px;
-            background: #ecfdf5;
-            border-radius: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 35px;
-            margin-bottom: 20px;
-        ">
-            🔌
-        </div>
-
-        <h3 style="
-            margin: 0 0 8px 0;
-            color: #0f172a;
-            font-size: 24px;
-        ">
-            Charger #{{ $charger }}
-        </h3>
-
-        <p style="
-            margin: 0 0 25px 0;
-            color: #64748b;
-        ">
-            Unit charger berhasil ditemukan melalui QR Code.
-        </p>
-
-        <div style="
-            background: #f8fafc;
-            border-radius: 14px;
-            padding: 20px;
-            margin-bottom: 25px;
-        ">
-
-            <div style="
-                display: flex;
-                justify-content: space-between;
-                margin-bottom: 15px;
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0; color: #1e293b;">Charger ID: #{{ $charger->id ?? $charger }}</h3>
+            <span style="
+                background: #dcfce7;
+                color: #15803d;
+                padding: 6px 14px;
+                border-radius: 20px;
+                font-size: 13px;
+                font-weight: 700;
             ">
-                <span style="color: #64748b;">
-                    ID Charger
-                </span>
+                Tersedia
+            </span>
+        </div>
 
-                <strong style="color: #0f172a;">
-                    #{{ $charger }}
-                </strong>
+        <div style="background: #f8fafc; border-radius: 12px; padding: 20px; margin-bottom: 25px;">
+            <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e2e8f0;">
+                <span style="color: #64748b;">Tipe Daya</span>
+                <strong style="color: #0f172a;">Fast Charging (DC)</strong>
             </div>
+            <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e2e8f0;">
+                <span style="color: #64748b;">Daya Maksimal</span>
+                <strong style="color: #0f172a;">50 kW</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 10px 0;">
+                <span style="color: #64748b;">Tarif per kWh</span>
+                <strong style="color: #2563eb;">Rp 2.467 / kWh</strong>
+            </div>
+        </div>
 
-            <div style="
-                display: flex;
-                justify-content: space-between;
-                margin-bottom: 15px;
+        <!-- FORM UTAMA MULAI PENGISIAN -->
+        <form action="{{ route('charging.start') }}" method="POST">
+            @csrf
+            <input type="hidden" name="charger_id" value="{{ $charger->id ?? $charger }}">
+
+            <button type="submit" style="
+                width: 100%;
+                background: linear-gradient(135deg, #2563eb, #1d4ed8);
+                color: #ffffff;
+                border: none;
+                padding: 16px;
+                border-radius: 14px;
+                font-size: 16px;
+                font-weight: 700;
+                cursor: pointer;
+                box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+                transition: transform 0.1s ease;
             ">
-                <span style="color: #64748b;">
-                    Status
-                </span>
-
-                <span style="
-                    background: #d1fae5;
-                    color: #065f46;
-                    padding: 5px 12px;
-                    border-radius: 20px;
-                    font-size: 12px;
-                    font-weight: 700;
-                ">
-                    ● TERSEDIA
-                </span>
-            </div>
-
-            <div style="
-                display: flex;
-                justify-content: space-between;
-            ">
-                <span style="color: #64748b;">
-                    Koneksi
-                </span>
-
-                <strong style="color: #0f172a;">
-                    Siap digunakan
-                </strong>
-            </div>
-
-        </div>
-
-        <div style="
-            background: #fffbeb;
-            color: #92400e;
-            padding: 15px;
-            border-radius: 12px;
-            font-size: 13px;
-            line-height: 1.5;
-            margin-bottom: 25px;
-        ">
-            💡 Pastikan kendaraan sudah terhubung dengan charger sebelum memulai pengisian daya.
-        </div>
-
-        <div style="
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            align-items: center;
-        ">
-
-            {{-- Form untuk Memulai Pengisian Daya --}}
-            <form action="{{ route('charging.start') }}" method="POST" style="margin: 0;">
-                @csrf
-                <input type="hidden" name="charger_id" value="{{ $charger }}">
-
-                <button
-                    type="submit"
-                    style="
-                        background: #059669;
-                        color: white;
-                        padding: 13px 25px;
-                        border: none;
-                        border-radius: 12px;
-                        text-decoration: none;
-                        font-weight: 700;
-                        font-size: 14px;
-                        cursor: pointer;
-                        transition: background 0.2s;
-                    "
-                    onmouseover="this.style.background='#047857'"
-                    onmouseout="this.style.background='#059669'"
-                >
-                    ⚡ Mulai Pengisian
-                </button>
-            </form>
-
-            <a href="{{ route('scan.charge') }}"
-               style="
-                    background: #f1f5f9;
-                    color: #475569;
-                    padding: 13px 25px;
-                    border-radius: 12px;
-                    text-decoration: none;
-                    font-weight: 600;
-                    font-size: 14px;
-               ">
-                ← Scan Lagi
-            </a>
-
-        </div>
-
+                ⚡ Mulai Pengisian Daya
+            </button>
+        </form>
     </div>
-
 </div>
-
 @endsection
