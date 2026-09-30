@@ -3,647 +3,233 @@
 @section('title', 'Pengisian Kendaraan')
 
 @section('content')
-
 @php
-    /*
-     * Target simulasi pengisian penuh = 30 menit.
-     */
-    $targetDurationSeconds = 30 * 60;
-
-    /*
-     * Hitung progress untuk session yang sudah selesai.
-     */
-    $completedProgress = 0;
-
-    if ($session->end_time) {
-        $actualDurationSeconds = $session->start_time
-            ->diffInSeconds($session->end_time);
-
-        $completedProgress = min(
-            100,
-            floor(
-                ($actualDurationSeconds / $targetDurationSeconds) * 100
-            )
-        );
-    }
+    $tariffPerKwh = 2500; // Rp 2.500
+    $chargingPowerKw = 50; // Daya charger 50 kW
+    $isCompleted = ($session->status == 'completed');
 @endphp
 
-<div style="
-    padding: 30px;
-    max-width: 800px;
-    margin: auto;
-">
+<div style="padding: 30px; max-width: 800px; margin: auto;">
 
-    {{-- Header --}}
-    <div style="margin-bottom: 25px;">
-        <h2 style="
-            margin: 0 0 8px 0;
-            color: #0f172a;
-        ">
-            ⚡ Pengisian Kendaraan
-        </h2>
-
-        <p style="
-            margin: 0;
-            color: #64748b;
-        ">
-            Charger sedang melakukan pengisian daya kendaraan.
-        </p>
-    </div>
-
-
-    {{-- Success Message --}}
-    @if(session('success'))
+    <!-- HEADER / BADGE STYLING -->
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
         <div style="
-            background: #d1fae5;
-            color: #065f46;
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-        ">
-            {{ session('success') }}
-        </div>
-    @endif
-
-
-    {{-- Error Message --}}
-    @if(session('error'))
-        <div style="
-            background: #fee2e2;
-            color: #991b1b;
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-        ">
-            {{ session('error') }}
-        </div>
-    @endif
-
-
-    {{-- Charging Card --}}
-    <div style="
-        background: white;
-        border-radius: 20px;
-        padding: 30px;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-    ">
-
-        {{-- Icon --}}
-        <div style="
-            width: 70px;
-            height: 70px;
-            background: #eff6ff;
-            border-radius: 18px;
-            display: flex;
-            align-items: center;
+            width: 42px; 
+            height: 42px; 
+            background: #eff6ff; 
+            border-radius: 12px; 
+            display: flex; 
+            align-items: center; 
             justify-content: center;
-            font-size: 35px;
-            margin-bottom: 20px;
         ">
             ⚡
         </div>
-
-
-        {{-- Judul --}}
-        <h3 style="
-            margin: 0 0 8px 0;
-            color: #0f172a;
-            font-size: 24px;
-        ">
-            {{ $session->status === 'ongoing'
-                ? 'Sedang Mengisi'
-                : 'Pengisian Selesai'
-            }}
-        </h3>
-
-
-        {{-- Session ID --}}
-        <p style="
-            margin: 0 0 30px 0;
-            color: #64748b;
-        ">
-            Session #{{ $session->id }}
-        </p>
-
-
-        {{-- Progress --}}
-        <div style="margin-bottom: 25px;">
-
-            <div style="
-                display: flex;
-                justify-content: space-between;
-                margin-bottom: 10px;
-            ">
-                <span style="color: #64748b;">
-                    Progress Pengisian
-                </span>
-
-                <strong
-                    id="progressText"
-                    style="
-                        color: #2563eb;
-                        font-size: 18px;
-                    "
-                >
-                    @if($session->end_time)
-                        {{ $completedProgress }}%
-                    @else
-                        0%
-                    @endif
-                </strong>
-            </div>
-
-
-            <div style="
-                width: 100%;
-                height: 18px;
-                background: #e2e8f0;
-                border-radius: 20px;
-                overflow: hidden;
-            ">
-                <div
-                    id="progressBar"
-                    style="
-                        width: {{ $session->end_time ? $completedProgress : 0 }}%;
-                        height: 100%;
-                        background: #2563eb;
-                        border-radius: 20px;
-                        transition: width 0.5s ease;
-                    "
-                ></div>
-            </div>
-
-        </div>
-
-
-        {{-- Waktu Mulai & Selesai --}}
-        <div style="
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-bottom: 15px;
-        ">
-
-            {{-- Waktu Mulai --}}
-            <div style="
-                background: #f8fafc;
-                padding: 18px;
-                border-radius: 14px;
-            ">
-                <div style="
-                    color: #64748b;
-                    font-size: 13px;
-                    margin-bottom: 5px;
-                ">
-                    Waktu Mulai
-                </div>
-
-                <strong style="color: #0f172a;">
-                    {{ $session->start_time->format('H:i:s') }}
-                </strong>
-            </div>
-
-
-            {{-- Waktu Selesai --}}
-            <div style="
-                background: #f8fafc;
-                padding: 18px;
-                border-radius: 14px;
-            ">
-                <div style="
-                    color: #64748b;
-                    font-size: 13px;
-                    margin-bottom: 5px;
-                ">
-                    Waktu Selesai
-                </div>
-
-                <strong style="color: #0f172a;">
-                    @if($session->end_time)
-                        {{ $session->end_time->format('H:i:s') }}
-                    @else
-                        -
-                    @endif
-                </strong>
-            </div>
-
-        </div>
-
-
-        {{-- Informasi Monitoring --}}
-        <div style="
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-bottom: 25px;
-        ">
-
-            {{-- Durasi --}}
-            <div style="
-                background: #f8fafc;
-                padding: 18px;
-                border-radius: 14px;
-            ">
-                <div style="
-                    color: #64748b;
-                    font-size: 13px;
-                    margin-bottom: 5px;
-                ">
-                    Durasi Pengisian
-                </div>
-
-                <strong
-                    id="durationText"
-                    style="color: #0f172a;"
-                >
-                    @if($session->end_time)
-
-                        @php
-                            $durationSeconds = $session->start_time
-                                ->diffInSeconds($session->end_time);
-
-                            $hours = intdiv(
-                                $durationSeconds,
-                                3600
-                            );
-
-                            $minutes = intdiv(
-                                $durationSeconds % 3600,
-                                60
-                            );
-
-                            $seconds = $durationSeconds % 60;
-                        @endphp
-
-                        {{ sprintf(
-                            '%02d:%02d:%02d',
-                            $hours,
-                            $minutes,
-                            $seconds
-                        ) }}
-
-                    @else
-                        00:00:00
-                    @endif
-                </strong>
-            </div>
-
-
-            {{-- Energi --}}
-            <div style="
-                background: #f8fafc;
-                padding: 18px;
-                border-radius: 14px;
-            ">
-                <div style="
-                    color: #64748b;
-                    font-size: 13px;
-                    margin-bottom: 5px;
-                ">
-                    Energi Terpakai
-                </div>
-
-                <strong
-                    id="energyText"
-                    style="color: #0f172a;"
-                >
-                    {{ number_format(
-                        (float) $session->energy_consumed_kwh,
-                        3
-                    ) }} kWh
-                </strong>
-            </div>
-
-
-            {{-- Tarif --}}
-            <div style="
-                background: #f8fafc;
-                padding: 18px;
-                border-radius: 14px;
-            ">
-                <div style="
-                    color: #64748b;
-                    font-size: 13px;
-                    margin-bottom: 5px;
-                ">
-                    Tarif per kWh
-                </div>
-
-                <strong style="color: #0f172a;">
-                    Rp {{ number_format(
-                        (float) $charger->price_per_kwh,
-                        0,
-                        ',',
-                        '.'
-                    ) }}
-                </strong>
-            </div>
-
-
-            {{-- Total Biaya --}}
-            <div style="
-                background: #f8fafc;
-                padding: 18px;
-                border-radius: 14px;
-            ">
-                <div style="
-                    color: #64748b;
-                    font-size: 13px;
-                    margin-bottom: 5px;
-                ">
-                    Total Biaya
-                </div>
-
-                <strong
-                    id="costText"
-                    style="color: #0f172a;"
-                >
-                    Rp {{ number_format(
-                        (float) $session->total_cost,
-                        0,
-                        ',',
-                        '.'
-                    ) }}
-                </strong>
-            </div>
-
-        </div>
-
-
-        {{-- Status --}}
-        @if($session->status === 'ongoing')
-
-            <div style="
-                background: #eff6ff;
-                color: #1e40af;
-                padding: 15px;
-                border-radius: 12px;
-                margin-bottom: 25px;
-                text-align: center;
-            ">
-                🔋 Kendaraan sedang melakukan pengisian daya...
-            </div>
-
-        @else
-
-            <div style="
-                background: #d1fae5;
-                color: #065f46;
-                padding: 15px;
-                border-radius: 12px;
-                margin-bottom: 25px;
-                text-align: center;
-            ">
-                ✓ Pengisian telah selesai
-            </div>
-
-        @endif
-
-
-        {{-- Tombol Stop --}}
-        @if($session->status === 'ongoing')
-
-            <form
-                action="{{ route(
-                    'charging.stop',
-                    $session->id
-                ) }}"
-                method="POST"
-            >
-                @csrf
-
-                <button
-                    type="submit"
-                    style="
-                        width: 100%;
-                        padding: 15px;
-                        border: none;
-                        border-radius: 12px;
-                        background: #dc2626;
-                        color: white;
-                        font-size: 16px;
-                        font-weight: bold;
-                        cursor: pointer;
-                    "
-                >
-                    ⏹ Stop Pengisian
-                </button>
-            </form>
-
-        @endif
-
-
-        {{-- Tombol Kembali --}}
-        <a
-            href="{{ route('scan.charge') }}"
-            style="
-                display: block;
-                width: 100%;
-                box-sizing: border-box;
-                margin-top: 15px;
-                padding: 15px;
-                border-radius: 12px;
-                background: #f1f5f9;
-                color: #475569;
-                text-align: center;
-                text-decoration: none;
-                font-size: 16px;
-                font-weight: 600;
-            "
-        >
-            ← Kembali ke Scan Charger
-        </a>
-
     </div>
+
+    <h2 style="margin: 0 0 4px 0; color: #0f172a; font-size: 28px; font-weight: 800;">
+        {{ $isCompleted ? 'Pengisian Selesai' : 'Sedang Mengisi' }}
+    </h2>
+    <p style="margin: 0 0 30px 0; color: #64748b; font-size: 16px;">
+        Session #{{ $session->id }}
+    </p>
+
+    <!-- PROGRESS BAR SECTION -->
+    <div style="margin-bottom: 30px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <span style="color: #64748b; font-size: 16px; font-weight: 500;">Progress Pengisian</span>
+            <strong style="color: #2563eb; font-size: 20px; font-weight: 800;" id="progressPercentage">
+                0%
+            </strong>
+        </div>
+        <div style="width: 100%; background: #e2e8f0; height: 14px; border-radius: 10px; overflow: hidden;">
+            <div id="progressBar" style="
+                width: 0%; 
+                background: #2563eb; 
+                height: 100%; 
+                border-radius: 10px; 
+                transition: width 0.5s ease;
+            "></div>
+        </div>
+    </div>
+
+    <!-- GRID INFORMASI UTAMA -->
+    <div style="
+        display: grid; 
+        grid-template-columns: repeat(2, 1fr); 
+        gap: 16px; 
+        margin-bottom: 25px;
+    ">
+        <!-- WAKTU MULAI -->
+        <div style="background: #f8fafc; padding: 20px; border-radius: 16px;">
+            <div style="color: #64748b; font-size: 14px; margin-bottom: 8px;">Waktu Mulai</div>
+            <strong style="color: #0f172a; font-size: 18px; font-weight: 700;" id="startTimeText">
+                {{ \Carbon\Carbon::parse($session->start_time)->format('H:i:s') }}
+            </strong>
+        </div>
+
+        <!-- WAKTU SELESAI -->
+        <div style="background: #f8fafc; padding: 20px; border-radius: 16px;">
+            <div style="color: #64748b; font-size: 14px; margin-bottom: 8px;">Waktu Selesai</div>
+            <strong style="color: #0f172a; font-size: 18px; font-weight: 700;" id="endTimeText">
+                {{ $session->end_time ? \Carbon\Carbon::parse($session->end_time)->format('H:i:s') : '-' }}
+            </strong>
+        </div>
+
+        <!-- DURASI PENGISIAN -->
+        <div style="background: #f8fafc; padding: 20px; border-radius: 16px;">
+            <div style="color: #64748b; font-size: 14px; margin-bottom: 8px;">Durasi Pengisian</div>
+            <strong style="color: #0f172a; font-size: 18px; font-weight: 700;" id="durationText">
+                00:00:00
+            </strong>
+        </div>
+
+        <!-- ENERGI TERPAKAI -->
+        <div style="background: #f8fafc; padding: 20px; border-radius: 16px;">
+            <div style="color: #64748b; font-size: 14px; margin-bottom: 8px;">Energi Terpakai</div>
+            <strong style="color: #0f172a; font-size: 18px; font-weight: 700;" id="energyText">
+                {{ number_format($session->energy_consumed_kwh ?? 0, 3) }} kWh
+            </strong>
+        </div>
+
+        <!-- TARIF PER KWH -->
+        <div style="background: #f8fafc; padding: 20px; border-radius: 16px;">
+            <div style="color: #64748b; font-size: 14px; margin-bottom: 8px;">Tarif per kWh</div>
+            <strong style="color: #0f172a; font-size: 18px; font-weight: 700;">
+                Rp {{ number_format($tariffPerKwh, 0, ',', '.') }}
+            </strong>
+        </div>
+
+        <!-- TOTAL BIAYA -->
+        <div style="background: #f8fafc; padding: 20px; border-radius: 16px;">
+            <div style="color: #64748b; font-size: 14px; margin-bottom: 8px;">Total Biaya</div>
+            <strong style="color: #0f172a; font-size: 18px; font-weight: 700;" id="costText">
+                Rp {{ number_format($session->total_cost ?? 0, 0, ',', '.') }}
+            </strong>
+        </div>
+    </div>
+
+    <!-- BANNER INFORMASI / STATUS -->
+    <div style="
+        background: {{ $isCompleted ? '#dcfce7' : '#eff6ff' }}; 
+        color: {{ $isCompleted ? '#15803d' : '#1e40af' }}; 
+        padding: 16px 20px; 
+        border-radius: 16px; 
+        font-size: 15px; 
+        display: flex; 
+        align-items: center; 
+        gap: 10px;
+        margin-bottom: 25px;
+    ">
+        {{ $isCompleted ? '✅ Sesi pengisian daya telah selesai.' : '🔋 Kendaraan sedang melakukan pengisian daya...' }}
+    </div>
+
+    @if(!$isCompleted)
+        <!-- TOMBOL HENTIKAN PENGISIAN -->
+        <form action="{{ route('charging.stop', $session->id) }}" method="POST">
+            @csrf
+            <input type="hidden" name="energy_consumed_kwh" id="inputEnergy" value="0">
+            <input type="hidden" name="total_cost" id="inputCost" value="0">
+
+            <button type="submit" style="
+                width: 100%;
+                background: #ef4444;
+                color: white;
+                padding: 16px;
+                border: none;
+                border-radius: 14px;
+                font-weight: 700;
+                font-size: 16px;
+                cursor: pointer;
+            ">
+                🛑 Hentikan Pengisian
+            </button>
+        </form>
+    @else
+        <a href="{{ route('dashboard') }}" style="
+            display: block;
+            text-align: center;
+            background: #0f172a;
+            color: white;
+            padding: 16px;
+            border-radius: 14px;
+            text-decoration: none;
+            font-weight: 700;
+        ">
+            Kembali ke Dashboard
+        </a>
+    @endif
 
 </div>
 
-
-{{-- ========================================================= --}}
-{{-- MONITORING REALTIME                                      --}}
-{{-- ========================================================= --}}
-
-@if($session->status === 'ongoing')
-
+<!-- SCRIPT TIMER LOGIKA MURNI -->
 <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const isCompleted = {{ $isCompleted ? 'true' : 'false' }};
+        const tariffPerKwh = {{ $tariffPerKwh }};
+        const chargingPowerKw = {{ $chargingPowerKw }}; // 50 kW
+        const targetDurationSeconds = 1800; // Simulasi 30 menit (100%)
 
-    /*
-     * Waktu mulai dari database
-     */
-    const startTime = new Date(
-        "{{ $session->start_time->toIso8601String() }}"
-    );
+        // Jika selesai, gunakan data murni database
+        if (isCompleted) {
+            return;
+        }
 
+        // Ambil atau set waktu mulai di browser agar TIMER PASTI MULAI DARI 0 SEKITAR SAAT DIBUKA
+        let storageKey = "charging_start_time_session_{{ $session->id }}";
+        let localStartTime = localStorage.getItem(storageKey);
 
-    /*
-     * Elemen tampilan
-     */
-    const progressBar =
-        document.getElementById('progressBar');
+        if (!localStartTime) {
+            localStartTime = new Date().getTime();
+            localStorage.setItem(storageKey, localStartTime);
+        } else {
+            localStartTime = parseInt(localStartTime);
+        }
 
-    const progressText =
-        document.getElementById('progressText');
+        // Format Tampilan Waktu Mulai lokal
+        let startDateObj = new Date(localStartTime);
+        let startHours = String(startDateObj.getHours()).padStart(2, '0');
+        let startMinutes = String(startDateObj.getMinutes()).padStart(2, '0');
+        let startSeconds = String(startDateObj.getSeconds()).padStart(2, '0');
+        document.getElementById('startTimeText').innerText = startHours + ':' + startMinutes + ':' + startSeconds;
 
-    const energyText =
-        document.getElementById('energyText');
+        function updateMetrics() {
+            let now = new Date().getTime();
+            let elapsedSeconds = Math.max(0, Math.floor((now - localStartTime) / 1000));
 
-    const durationText =
-        document.getElementById('durationText');
+            // 1. Format Durasi (HH:MM:SS) - Murni berjalan dari 00:00:00
+            let hours = Math.floor(elapsedSeconds / 3600);
+            let minutes = Math.floor((elapsedSeconds % 3600) / 60);
+            let seconds = elapsedSeconds % 60;
 
-    const costText =
-        document.getElementById('costText');
+            let formattedDuration = 
+                String(hours).padStart(2, '0') + ':' + 
+                String(minutes).padStart(2, '0') + ':' + 
+                String(seconds).padStart(2, '0');
 
+            document.getElementById('durationText').innerText = formattedDuration;
 
-    /*
-     * Data charger
-     */
-    const maxPower =
-        {{ (float) $charger->max_power_kw }};
+            // 2. Energi Terpakai (kWh)
+            let energyConsumed = (chargingPowerKw * (elapsedSeconds / 3600));
+            document.getElementById('energyText').innerText = energyConsumed.toFixed(3) + ' kWh';
 
-    const pricePerKwh =
-        {{ (float) $charger->price_per_kwh }};
+            // 3. Total Biaya (Rp)
+            let totalCost = Math.round(energyConsumed * tariffPerKwh);
+            document.getElementById('costText').innerText = 'Rp ' + totalCost.toLocaleString('id-ID');
 
+            // 4. Progress %
+            let progress = Math.min(100, Math.floor((elapsedSeconds / targetDurationSeconds) * 100));
+            document.getElementById('progressPercentage').innerText = progress + '%';
+            document.getElementById('progressBar').style.width = progress + '%';
 
-    /*
-     * Target simulasi penuh:
-     *
-     * 30 menit = 1800 detik
-     */
-    const targetDurationSeconds = 30 * 60;
+            // Update nilai form tersembunyi untuk dikirim saat klik stop
+            const inputEnergy = document.getElementById('inputEnergy');
+            const inputCost = document.getElementById('inputCost');
+            if (inputEnergy) inputEnergy.value = energyConsumed.toFixed(4);
+            if (inputCost) inputCost.value = totalCost;
+        }
 
-
-    /*
-     * Update monitoring
-     */
-    function updateMonitoring() {
-
-        const now = new Date();
-
-
-        /*
-         * Hitung durasi aktual
-         */
-        const durationSeconds = Math.max(
-            0,
-            Math.floor(
-                (now - startTime) / 1000
-            )
-        );
-
-
-        /*
-         * Hitung jam, menit, detik
-         */
-        const hours = Math.floor(
-            durationSeconds / 3600
-        );
-
-        const minutes = Math.floor(
-            (durationSeconds % 3600) / 60
-        );
-
-        const seconds = durationSeconds % 60;
-
-
-        durationText.textContent =
-            String(hours).padStart(2, '0') + ':' +
-            String(minutes).padStart(2, '0') + ':' +
-            String(seconds).padStart(2, '0');
-
-
-        /*
-         * =====================================================
-         * PERHITUNGAN ENERGI
-         * =====================================================
-         *
-         * Energi (kWh)
-         * = Daya (kW) × Waktu (jam)
-         *
-         * Contoh:
-         * 50 kW × 133/3600 jam
-         * ≈ 1.847 kWh
-         */
-        const durationHours =
-            durationSeconds / 3600;
-
-        const energy =
-            durationHours * maxPower;
-
-
-        energyText.textContent =
-            energy.toFixed(3) + ' kWh';
-
-
-        /*
-         * =====================================================
-         * PERHITUNGAN BIAYA
-         * =====================================================
-         *
-         * Biaya = Energi × Tarif
-         */
-        const cost =
-            energy * pricePerKwh;
-
-
-        costText.textContent =
-            'Rp ' +
-            Math.round(cost)
-                .toLocaleString('id-ID');
-
-
-        /*
-         * =====================================================
-         * PERHITUNGAN PROGRESS
-         * =====================================================
-         *
-         * Target simulasi = 30 menit
-         *
-         * Progress =
-         * durasi aktual / 30 menit × 100
-         */
-        let progress = Math.floor(
-            (
-                durationSeconds /
-                targetDurationSeconds
-            ) * 100
-        );
-
-
-        /*
-         * Maksimal 100%
-         */
-        progress = Math.min(
-            100,
-            progress
-        );
-
-
-        progressBar.style.width =
-            progress + '%';
-
-        progressText.textContent =
-            progress + '%';
-    }
-
-
-    /*
-     * Jalankan pertama kali
-     */
-    updateMonitoring();
-
-
-    /*
-     * Update setiap 1 detik
-     */
-    const monitoringInterval =
-        setInterval(
-            updateMonitoring,
-            1000
-        );
-
+        updateMetrics();
+        setInterval(updateMetrics, 1000);
+    });
 </script>
-
-@endif
-
 @endsection
