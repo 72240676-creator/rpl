@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\ChargingSession;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use App\Models\ChargingSession;
+use App\Models\Transaction;
 use App\Mail\SendChargingInvoiceMail;
 
 class ChargingSessionController extends Controller
@@ -14,78 +16,354 @@ class ChargingSessionController extends Controller
      */
     public function show($id)
     {
-        $session = ChargingSession::with(['charger', 'user', 'vehicle'])->findOrFail($id);
+        $session = ChargingSession::with([
+            'charger',
+            'user',
+            'vehicle'
+        ])->findOrFail($id);
 
-        return view('chargingsession', compact('session'));
+        return view(
+            'chargingsession',
+            compact('session')
+        );
     }
 
     /**
      * Menghentikan sesi pengisian daya (Stop Charging).
      */
     public function stop(Request $request, $id)
-{
-    $session = ChargingSession::with(['charger', 'user'])->findOrFail($id);
+    {
+        $session = ChargingSession::with([
+            'charger',
+            'user'
+        ])->findOrFail($id);
 
-    if ($session->status === 'ongoing') {
-        $endTime = now();
-        $energyConsumed = $request->input('energy_consumed', 5.0); 
-        $totalCost = $energyConsumed * ($session->charger->price_per_kwh ?? 0);
+        if ($session->status === 'ongoing') {
 
-        $session->update([
-            'end_time'            => $endTime,
-            'energy_consumed_kwh' => $energyConsumed,
-            'total_cost'          => $totalCost,
-            'status'              => 'completed',
-        ]);
+            // Waktu charging selesai
+            $endTime = now();
 
-        // 1. Otomatis buat data notifikasi untuk ditampilkan di halaman Notifications web
-        // (Sesuaikan nama kolom tabel notifikasi kamu, misal: user_id, title, message, is_read)
-        \App\Models\Notification::create([
-            'user_id' => $session->user_id,
-            'title'   => 'Sesi Pengisian Daya Selesai',
-            'message' => 'Sesi charging pada ' . ($session->charger->name ?? 'Charger') . ' telah selesai. Total tagihan: Rp ' . number_format($totalCost, 0, ',', '.'),
-            'is_read' => false,
-        ]);
+            /*
+             * Mengambil nilai terakhir yang ditampilkan
+             * oleh Live Charging.
+             *
+             * Nilai ini dikirim dari chargingsession.blade.php.
+             */
+            $energyConsumed = (float) $request->input(
+                'energy_consumed',
+                0
+            );
+
+            $totalCost = (float) $request->input(
+                'total_cost',
+                0
+            );
+
+            // Pastikan nilai tidak negatif
+            $energyConsumed = max(
+                0,
+                $energyConsumed
+            );
+
+            $totalCost = max(
+                0,
+                $totalCost
+            );
+
+            // Pembulatan
+            $energyConsumed = round(
+                $energyConsumed,
+                3
+            );
+
+            $totalCost = round(
+                $totalCost
+            );
+
+            // Update data charging session
+            $session->update([
+                'end_time' => $endTime,
+                'energy_consumed_kwh' => $energyConsumed,
+                'total_cost' => $totalCost,
+                'status' => 'completed',
+            ]);
+
+            // Buat notifikasi bahwa charging selesai
+            \App\Models\Notification::create([
+                'user_id' => $session->user_id,
+
+                'title' =>
+                    'Sesi Pengisian Daya Selesai',
+
+                'message' =>
+                    'Sesi charging pada ' .
+                    ($session->charger->name ?? 'Charger') .
+                    ' telah selesai. Total tagihan: Rp ' .
+                    number_format(
+                        $totalCost,
+                        0,
+                        ',',
+                        '.'
+                    ),
+
+                'is_read' => false,
+            ]);
+        }
+
+        return redirect()
+            ->route(
+                'charging.session',
+                $id
+            )
+            ->with(
+                'success',
+                'Sesi pengisian daya berhasil dihentikan!'
+            );
     }
 
-    return redirect()->route('charging.session', $id)
-                     ->with('success', 'Sesi pengisian daya berhasil dihentikan!');
-}
     /**
      * Menampilkan halaman pembayaran untuk sesi charging.
      */
     public function paymentView($id)
     {
-        $session = ChargingSession::with(['charger', 'user', 'vehicle'])->findOrFail($id);
+        $session = ChargingSession::with([
+            'charger',
+            'user',
+            'vehicle'
+        ])->findOrFail($id);
 
-        // Menyesuaikan dengan file view 'payment.blade.php' yang ada di folder resources/views/
-        return view('payment', compact('session'));
+        return view(
+            'payment',
+            compact('session')
+        );
     }
 
     /**
      * Memproses pembayaran sesi charging.
      */
-   public function pay(Request $request, $id)
-{
-    $session = ChargingSession::with(['user', 'charger'])->findOrFail($id);
+    public function pay(Request $request, $id)
+    {
+        $session = ChargingSession::with([
+            'user',
+            'charger'
+        ])->findOrFail($id);
 
-    $session->update(['status' => 'paid']);
+        $user = $session->user;
 
-    // 2. Kirim email invoice ke Gmail pengguna jika emailnya tersedia
-    if ($session->user && $session->user->email) {
-        Mail::to($session->user->email)->send(new SendChargingInvoiceMail($session));
+        // Pastikan user ditemukan
+        if (!$user) {
+            return back()->with(
+                'error',
+                'Data pengguna tidak ditemukan.'
+            );
+        }
+
+        /*
+         * Jika sudah dibayar sebelumnya,
+         * langsung arahkan ke invoice.
+         */
+        if ($session->status === 'paid') {
+
+            return redirect()
+                ->route(
+                    'charging.invoice',
+                    $session->id
+                )
+                ->with(
+                    'info',
+                    'Tagihan ini sudah dibayar sebelumnya.'
+                );
+        }
+
+        // Ambil saldo user
+        $saldoUser = (float) $user->saldo;
+
+        // Ambil total biaya dari charging session
+        $totalCost = (float) $session->total_cost;
+
+        // Pastikan saldo mencukupi
+        if ($saldoUser < $totalCost) {
+
+            return back()->with(
+                'error',
+                'Saldo tidak mencukupi! Saldo Anda: Rp ' .
+                number_format(
+                    $saldoUser,
+                    0,
+                    ',',
+                    '.'
+                ) .
+                ', Tagihan: Rp ' .
+                number_format(
+                    $totalCost,
+                    0,
+                    ',',
+                    '.'
+                )
+            );
+        }
+
+        /*
+         * Proses pembayaran dalam database transaction
+         * agar saldo, session, dan transaction
+         * berhasil disimpan secara bersamaan.
+         */
+        DB::beginTransaction();
+
+        try {
+
+            // ==========================================
+            // 1. POTONG SALDO USER
+            // ==========================================
+
+            $user->saldo =
+                $saldoUser - $totalCost;
+
+            $user->save();
+
+
+            // ==========================================
+            // 2. UBAH STATUS CHARGING
+            // ==========================================
+
+            $session->update([
+                'status' => 'paid',
+            ]);
+
+
+            // ==========================================
+            // 3. BUAT NOMOR INVOICE
+            // ==========================================
+
+            $invoiceNumber =
+                'INV-CHG-' .
+                now()->format('Ymd') .
+                '-' .
+                str_pad(
+                    $session->id,
+                    5,
+                    '0',
+                    STR_PAD_LEFT
+                );
+
+
+            // ==========================================
+            // 4. BUAT TRANSACTION
+            // ==========================================
+
+            $transaction = Transaction::create([
+
+                'session_id' =>
+                    $session->id,
+
+                'invoice_number' =>
+                    $invoiceNumber,
+
+                'payment_method' =>
+                    'e-wallet',
+
+                'amount' =>
+                    $totalCost,
+
+                'type' =>
+                    'payment',
+
+                'status' =>
+                    'success',
+
+                'paid_at' =>
+                    now(),
+
+            ]);
+
+
+            // Commit semua perubahan database
+            DB::commit();
+
+
+            // ==========================================
+            // 5. KIRIM EMAIL INVOICE
+            // ==========================================
+
+            if (
+                $user->email
+            ) {
+
+                try {
+
+                    Mail::to(
+                        $user->email
+                    )->send(
+                        new SendChargingInvoiceMail(
+                            $session
+                        )
+                    );
+
+                } catch (\Exception $mailException) {
+
+                    /*
+                     * Jika email gagal dikirim,
+                     * pembayaran tetap dianggap berhasil.
+                     */
+                }
+            }
+
+
+            // ==========================================
+            // 6. NOTIFIKASI PEMBAYARAN
+            // ==========================================
+
+            \App\Models\Notification::create([
+
+                'user_id' =>
+                    $session->user_id,
+
+                'title' =>
+                    'Pembayaran Berhasil',
+
+                'message' =>
+                    'Pembayaran untuk sesi charging #' .
+                    $session->id .
+                    ' sebesar Rp ' .
+                    number_format(
+                        $totalCost,
+                        0,
+                        ',',
+                        '.'
+                    ) .
+                    ' berhasil. Invoice ' .
+                    $invoiceNumber .
+                    ' telah dibuat.',
+
+                'is_read' =>
+                    false,
+            ]);
+
+
+            // ==========================================
+            // 7. ARAHKAN KE INVOICE
+            // ==========================================
+
+            return redirect()
+                ->route(
+                    'charging.invoice',
+                    $session->id
+                )
+                ->with(
+                    'success',
+                    'Pembayaran berhasil! Invoice berhasil dibuat.'
+                );
+
+        } catch (\Exception $e) {
+
+            // Batalkan perubahan database
+            DB::rollBack();
+
+            return back()->with(
+                'error',
+                'Pembayaran gagal: ' .
+                $e->getMessage()
+            );
+        }
     }
-
-    // Buat juga notifikasi web bahwa pembayaran sukses
-    \App\Models\Notification::create([
-        'user_id' => $session->user_id,
-        'title'   => 'Pembayaran Berhasil',
-        'message' => 'Pembayaran untuk sesi charging # ' . $id . ' telah berhasil dikonfirmasi. Invoice telah dikirim ke Gmail Anda.',
-        'is_read' => false,
-    ]);
-
-    return redirect()->route('charging.session', $id)
-                     ->with('success', 'Pembayaran berhasil diproses dan invoice dikirim ke Gmail!');
-
-}
 }
