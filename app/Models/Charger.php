@@ -10,7 +10,10 @@ class Charger extends Model
 {
     use HasFactory;
 
-    
+    protected $table = 'chargers';
+
+    // Primary key tabel chargers adalah id_charger
+    protected $primaryKey = 'id_charger';
 
     protected $fillable = [
         'id_location',
@@ -23,13 +26,17 @@ class Charger extends Model
     ];
 
     protected $casts = [
-        'max_power_kw'  => 'decimal:2',
+        'max_power_kw' => 'decimal:2',
         'price_per_kwh' => 'decimal:2',
-        'is_online'     => 'boolean',
+        'is_online' => 'boolean',
     ];
 
     public function location(): BelongsTo
     {
-        return $this->belongsTo(Location::class, 'id_location', 'id_location');
+        return $this->belongsTo(
+            Location::class,
+            'id_location',
+            'id_location'
+        );
     }
 }
