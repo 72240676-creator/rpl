@@ -2,15 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Charger;
 use Illuminate\Http\Request;
 
 class ChargingController extends Controller
 {
+    /**
+     * Halaman scan charger.
+     */
     public function scan()
     {
         return view('scan-charge');
     }
 
+    /**
+     * Memproses hasil scan QR.
+     */
     public function processScan(Request $request)
     {
         $request->validate([
@@ -24,8 +31,17 @@ class ChargingController extends Controller
         ]);
     }
 
+    /**
+     * Menampilkan detail charger.
+     */
     public function show($charger)
     {
-        return view('charger-detail', compact('charger'));
+        // Ambil charger berdasarkan primary key id_charger
+        $charger = Charger::findOrFail($charger);
+
+        return view(
+            'charger-detail',
+            compact('charger')
+        );
     }
 }

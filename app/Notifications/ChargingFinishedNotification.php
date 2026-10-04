@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Models\Transaction;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -11,66 +12,239 @@ class ChargingFinishedNotification extends Notification
     use Queueable;
 
     protected $type;
-    protected $data;
+    protected $session;
 
     /**
-     * @param string $type Jenis notifikasi ('charging_finished' atau 'payment_success')
-     * @param mixed $data Data sesi pengisian daya atau invoice
+     * Jenis:
+     * - charging_finished
+     * - payment_success
      */
-    public function __construct($type, $data)
+    public function __construct($type, $session)
     {
         $this->type = $type;
-        $this->data = $data;
+        $this->session = $session;
     }
 
+    /**
+     * Kirim ke email dan database.
+     */
     public function via($notifiable)
     {
         return ['mail', 'database'];
     }
 
+    /**
+     * Email notification.
+     */
     public function toMail($notifiable)
     {
-        // 1. Notifikasi Pengisian Daya Selesai
+        /*
+         * ============================================
+         * CHARGING SELESAI
+         * ============================================
+         */
         if ($this->type === 'charging_finished') {
+
             return (new MailMessage)
                 ->subject('Pengisian Daya Selesai - EV Charge')
-                ->greeting('Halo, ' . $notifiable->name . '!')
-                ->line('Sesi pengisian daya kendaraan listrik Anda telah selesai.')
+                ->greeting(
+                    'Halo, ' .
+                    ($notifiable->name ?? 'Pengguna') .
+                    '!'
+                )
+                ->line(
+                    'Sesi pengisian daya kendaraan listrik Anda telah selesai.'
+                )
                 ->line('Rincian Sesi:')
-                ->line('- ID Sesi: #' . $this->data->id)
-                ->line('- Total Energi: ' . ($this->data->energy_kwh ?? '0') . ' kWh')
-                ->line('- Biaya Sesi: Rp ' . number_format($this->data->total_cost ?? 0, 0, ',', '.'))
-                ->action('Lihat Detail Invoice', url('/notifications'))
-                ->line('Silakan lakukan pembayaran untuk menyelesaikan transaksi.');
+                ->line(
+                    'ID Sesi: #' .
+                    $this->session->id
+                )
+                ->line(
+                    'Total Energi: ' .
+                    number_format(
+                        $this->session->energy_consumed_kwh ?? 0,
+                        3,
+                        ',',
+                        '.'
+                    ) .
+                    ' kWh'
+                )
+                ->line(
+                    'Biaya Sesi: Rp ' .
+                    number_format(
+                        $this->session->total_cost ?? 0,
+                        0,
+                        ',',
+                        '.'
+                    )
+                )
+                ->action(
+                    'Lakukan Pembayaran',
+                    route(
+                        'charging.payment.view',
+                        $this->session->id
+                    )
+                )
+                ->line(
+                    'Silakan lakukan pembayaran untuk menyelesaikan transaksi.'
+                );
         }
 
-        // 2. Notifikasi Pembayaran Invoice Berhasil
+
+        /*
+         * ============================================
+         * PEMBAYARAN BERHASIL
+         * ============================================
+         */
+
+        $transaction = Transaction::where(
+            'session_id',
+            $this->session->id
+        )
+            ->where(
+                'status',
+                'success'
+            )
+            ->latest()
+            ->first();
+
+
+        $invoiceNumber =
+            $transaction->invoice_number
+            ?? 'INV-' . $this->session->id;
+
+
+        $amount =
+            $transaction->amount
+            ?? $this->session->total_cost
+            ?? 0;
+
+
         return (new MailMessage)
-            ->subject('Pembayaran Berhasil - Bukti Transaksi EV Charge')
-            ->greeting('Halo, ' . $notifiable->name . '!')
-            ->line('Pembayaran tagihan pengisian daya Anda telah berhasil diproses.')
+            ->subject(
+                'Pembayaran Berhasil - EV Charge'
+            )
+            ->greeting(
+                'Halo, ' .
+                ($notifiable->name ?? 'Pengguna') .
+                '!'
+            )
+            ->line(
+                'Pembayaran tagihan pengisian daya Anda telah berhasil diproses.'
+            )
             ->line('Rincian Pembayaran:')
-            ->line('- No. Invoice: #' . ($this->data->invoice_number ?? $this->data->id))
-            ->line('- Total Pembayaran: Rp ' . number_format($this->data->amount ?? $this->data->total_cost ?? 0, 0, ',', '.'))
-            ->line('- Status: LUNAS')
-            ->action('Lihat Riwayat Transaksi', url('/notifications'))
-            ->line('Terima kasih telah menggunakan layanan EV Charge!');
+            ->line(
+                'No. Invoice: ' .
+                $invoiceNumber
+            )
+            ->line(
+                'ID Sesi: #' .
+                $this->session->id
+            )
+            ->line(
+                'Total Pembayaran: Rp ' .
+                number_format(
+                    $amount,
+                    0,
+                    ',',
+                    '.'
+                )
+            )
+            ->line(
+                'Status: LUNAS'
+            )
+            ->action(
+                'Lihat Invoice',
+                route(
+                    'charging.invoice',
+                    $this->session->id
+                )
+            )
+            ->line(
+                'Invoice PDF juga telah dikirim melalui email.'
+            )
+            ->line(
+                'Terima kasih telah menggunakan layanan EV Charge!'
+            );
     }
 
+
+    /**
+     * Data yang disimpan ke tabel notifications.
+     */
     public function toArray($notifiable)
     {
+        /*
+         * ============================================
+         * CHARGING SELESAI
+         * ============================================
+         */
         if ($this->type === 'charging_finished') {
+
             return [
-                'title' => 'Pengisian Daya Selesai',
-                'message' => 'Sesi #' . $this->data->id . ' selesai. Silakan lakukan pembayaran.',
-                'session_id' => $this->data->id,
+                'title' =>
+                    'Pengisian Daya Selesai',
+
+                'message' =>
+                    'Sesi #' .
+                    $this->session->id .
+                    ' selesai. Silakan lakukan pembayaran.',
+
+                'session_id' =>
+                    $this->session->id,
+
+                'notification_type' =>
+                    'charging_finished',
             ];
         }
 
+
+        /*
+         * ============================================
+         * PEMBAYARAN BERHASIL
+         * ============================================
+         */
+
+        $transaction = Transaction::where(
+            'session_id',
+            $this->session->id
+        )
+            ->where(
+                'status',
+                'success'
+            )
+            ->latest()
+            ->first();
+
+
+        $invoiceNumber =
+            $transaction->invoice_number
+            ?? 'INV-' . $this->session->id;
+
+
         return [
-            'title' => 'Pembayaran Berhasil',
-            'message' => 'Pembayaran Invoice #' . ($this->data->invoice_number ?? $this->data->id) . ' berhasil.',
-            'invoice_id' => $this->data->id,
+            'title' =>
+                'Pembayaran Berhasil',
+
+            'message' =>
+                'Pembayaran Invoice ' .
+                $invoiceNumber .
+                ' berhasil. Status pembayaran LUNAS.',
+
+            /*
+             * Tetap simpan session_id.
+             * Ini penting agar halaman notifications
+             * tahu invoice/session mana yang dibuka.
+             */
+            'session_id' =>
+                $this->session->id,
+
+            'invoice_number' =>
+                $invoiceNumber,
+
+            'notification_type' =>
+                'payment_success',
         ];
     }
 }

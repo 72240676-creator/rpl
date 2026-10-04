@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\SendChargingInvoiceMail;
 use App\Models\ChargingSession;
 use App\Models\Charger;
+use App\Models\Transaction;
 use App\Notifications\ChargingFinishedNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class ChargingSessionController extends Controller
 {
@@ -15,45 +18,33 @@ class ChargingSessionController extends Controller
     public function start(Request $request)
     {
         $request->validate([
-            'charger_id' => 'required|integer',
+            'charger_id' => 'required',
         ]);
 
         $user = auth()->user();
 
-        // Pastikan user sudah login
         if (!$user) {
             return redirect()
                 ->route('login')
                 ->with('error', 'Silakan login terlebih dahulu.');
         }
 
-        // Cek apakah user masih punya session yang sedang berjalan
-        $ongoingSession = ChargingSession::where(
-            'user_id',
-            $user->id_user
-        )
+        // Cek apakah masih ada charging yang berjalan
+        $ongoingSession = ChargingSession::where('user_id', $user->id_user)
             ->where('status', 'ongoing')
             ->first();
 
         if ($ongoingSession) {
             return redirect()
-                ->route(
-                    'charging.session',
-                    $ongoingSession->id
-                )
+                ->route('charging.session', $ongoingSession->id)
                 ->with(
                     'error',
                     'Anda masih memiliki sesi pengisian yang sedang berjalan.'
                 );
         }
 
-        // Ambil charger yang dipilih
-        // Primary key Charger = id_charger
-        $charger = Charger::findOrFail(
-            $request->charger_id
-        );
+        $charger = Charger::findOrFail($request->charger_id);
 
-        // Ambil kendaraan pertama milik user
         $vehicle = $user->vehicles()->first();
 
         if (!$vehicle) {
@@ -63,40 +54,24 @@ class ChargingSessionController extends Controller
             );
         }
 
-        // Buat charging session baru
+        // Buat charging session
         $session = ChargingSession::create([
             'user_id' => $user->id_user,
-
-            // PENTING:
-            // tabel chargers menggunakan id_charger
             'charger_id' => $charger->id_charger,
-
             'vehicle_id' => $vehicle->id_vehicle,
-
             'start_time' => now(),
-
             'end_time' => null,
-
             'energy_consumed_kwh' => 0,
-
             'total_cost' => 0,
-
             'status' => 'ongoing',
         ]);
 
         return redirect()
-            ->route(
-                'charging.session',
-                $session->id
-            )
-            ->with(
-                'success',
-                'Pengisian daya berhasil dimulai.'
-            );
+            ->route('charging.session', $session->id);
     }
 
     /**
-     * Menampilkan charging session yang sedang berjalan.
+     * Detail charging session.
      */
     public function show(ChargingSession $session)
     {
@@ -107,85 +82,305 @@ class ChargingSessionController extends Controller
     }
 
     /**
-     * Menghentikan charging session.
+     * Menghentikan charging.
      */
     public function stop(
         Request $request,
         ChargingSession $session
     ) {
         /*
-         * Ambil nilai terakhir dari Live Charging.
+         * HANYA jalankan jika status masih ongoing.
          *
-         * Nilai ini dikirim dari chargingsession.blade.php
-         * melalui:
-         * - energy_consumed
-         * - total_cost
+         * Ini penting supaya refresh / klik dua kali
+         * tidak membuat notifikasi duplikat.
          */
-        $energyConsumed = (float) $request->input(
-            'energy_consumed',
-            $session->energy_consumed_kwh ?? 0
-        );
+        if ($session->status === 'ongoing') {
 
-        $totalCost = (float) $request->input(
-            'total_cost',
-            $session->total_cost ?? 0
-        );
+            $endTime = now();
 
-        // Pastikan nilainya tidak negatif
-        $energyConsumed = max(
-            0,
-            $energyConsumed
-        );
+            // Hitung durasi charging
+            $durationHours =
+                $session->start_time->diffInSeconds($endTime) / 3600;
 
-        $totalCost = max(
-            0,
-            $totalCost
-        );
+            // Hitung energi
+            $energyConsumed =
+                $durationHours *
+                (float) $session->charger->max_power_kw;
 
-        // Pembulatan sesuai tipe kolom database
-        $energyConsumed = round(
-            $energyConsumed,
-            3
-        );
+            // Hitung biaya
+            $totalCost =
+                $energyConsumed *
+                (float) $session->charger->price_per_kwh;
 
-        $totalCost = round(
-            $totalCost
-        );
-
-        // Update charging session
-        $session->update([
-            'end_time' => now(),
-
-            'energy_consumed_kwh' =>
-                $energyConsumed,
-
-            'total_cost' =>
-                $totalCost,
-
-            'status' =>
-                'completed',
-        ]);
-
-        // Kirim notifikasi charging selesai
-        $user = auth()->user();
-
-        if ($user) {
-            $user->notify(
-                new ChargingFinishedNotification(
-                    'charging_finished',
-                    $session
-                )
+            $energyConsumed = round(
+                max(0, $energyConsumed),
+                3
             );
+
+            $totalCost = round(
+                max(0, $totalCost),
+                2
+            );
+
+            /*
+             * Simpan hasil charging.
+             */
+            $session->update([
+                'end_time' => $endTime,
+                'energy_consumed_kwh' => $energyConsumed,
+                'total_cost' => $totalCost,
+                'status' => 'completed',
+            ]);
+
+            /*
+             * Charger tersedia kembali.
+             */
+            $session->charger->update([
+                'status' => 'tersedia',
+            ]);
+
+            /*
+             * =====================================================
+             * NOTIFIKASI CHARGING SELESAI
+             * =====================================================
+             *
+             * HANYA dibuat di sini.
+             */
+            if ($session->user) {
+                try {
+                    $session->user->notify(
+                        new ChargingFinishedNotification(
+                            'charging_finished',
+                            $session
+                        )
+                    );
+                } catch (\Exception $e) {
+                    report($e);
+                }
+            }
         }
 
+        /*
+         * Setelah selesai langsung ke pembayaran.
+         */
         return redirect()
             ->route(
-                'charging.session',
+                'charging.payment.view',
                 $session->id
             )
             ->with(
                 'success',
-                'Pengisian daya selesai dan notifikasi telah dikirim.'
+                'Charging selesai. Silakan lanjutkan pembayaran.'
             );
+    }
+
+    /**
+     * Halaman pembayaran.
+     */
+    public function paymentView($id)
+    {
+        $session = ChargingSession::with([
+            'charger',
+            'user',
+            'vehicle',
+        ])->findOrFail($id);
+
+        /*
+         * Kalau sudah dibayar,
+         * jangan tampilkan halaman pembayaran lagi.
+         */
+        $transaction = Transaction::where(
+            'session_id',
+            $session->id
+        )
+            ->where('status', 'success')
+            ->first();
+
+        if (
+            $session->status === 'paid' ||
+            $transaction
+        ) {
+            return redirect()
+                ->route(
+                    'charging.invoice',
+                    $session->id
+                );
+        }
+
+        return view(
+            'payment',
+            compact('session')
+        );
+    }
+
+    /**
+     * Proses pembayaran.
+     */
+    public function pay(
+        Request $request,
+        $id
+    ) {
+        $session = ChargingSession::with([
+            'charger',
+            'user',
+        ])->findOrFail($id);
+
+        /*
+         * Cek transaksi yang sudah berhasil.
+         */
+        $transaction = Transaction::where(
+            'session_id',
+            $session->id
+        )
+            ->where('status', 'success')
+            ->first();
+
+        /*
+         * Kalau sudah pernah bayar,
+         * langsung buka invoice.
+         *
+         * Jangan membuat transaksi,
+         * email atau notifikasi lagi.
+         */
+        if ($transaction) {
+
+            if ($session->status !== 'paid') {
+                $session->update([
+                    'status' => 'paid',
+                ]);
+            }
+
+            return redirect()
+                ->route(
+                    'charging.invoice',
+                    $session->id
+                );
+        }
+
+        /*
+         * =====================================================
+         * BUAT TRANSAKSI
+         * =====================================================
+         */
+        $transaction = Transaction::create([
+            'session_id' => $session->id,
+
+            'invoice_number' =>
+                'INV-' .
+                $session->id .
+                '-' .
+                now()->format('YmdHis'),
+
+            'payment_method' => 'e-wallet',
+
+            'amount' => $session->total_cost ?? 0,
+
+            'type' => 'payment',
+
+            'status' => 'success',
+
+            'paid_at' => now(),
+        ]);
+
+        /*
+         * Tandai session sebagai PAID.
+         */
+        $session->update([
+            'status' => 'paid',
+        ]);
+
+        /*
+         * =====================================================
+         * KIRIM EMAIL INVOICE
+         * =====================================================
+         */
+        if (
+            $session->user &&
+            $session->user->email
+        ) {
+            try {
+
+                Mail::to(
+                    $session->user->email
+                )->send(
+                    new SendChargingInvoiceMail(
+                        $session
+                    )
+                );
+
+            } catch (\Exception $e) {
+
+                report($e);
+            }
+        }
+
+        /*
+         * =====================================================
+         * NOTIFIKASI PEMBAYARAN BERHASIL
+         * =====================================================
+         *
+         * Gunakan notification Laravel saja.
+         *
+         * Jangan Notification::create() lagi karena
+         * bisa menyebabkan dua sistem notifikasi berjalan.
+         */
+        if ($session->user) {
+            try {
+
+                $session->user->notify(
+                    new ChargingFinishedNotification(
+                        'payment_success',
+                        $transaction
+                    )
+                );
+
+            } catch (\Exception $e) {
+
+                report($e);
+            }
+        }
+
+        /*
+         * Buka invoice.
+         */
+        return redirect()
+            ->route(
+                'charging.invoice',
+                $session->id
+            )
+            ->with(
+                'success',
+                'Pembayaran berhasil! Invoice telah dikirim ke Gmail Anda.'
+            );
+    }
+
+    /**
+     * Riwayat charging.
+     */
+    public function history()
+    {
+        $user = auth()->user();
+
+        $histories = ChargingSession::where(
+            'user_id',
+            $user->id_user
+        )
+            ->whereIn(
+                'status',
+                [
+                    'completed',
+                    'paid',
+                ]
+            )
+            ->orderBy(
+                'end_time',
+                'desc'
+            )
+            ->get();
+
+        return view(
+            'riwayat',
+            compact('histories')
+        );
     }
 }
