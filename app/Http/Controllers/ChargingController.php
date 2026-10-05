@@ -2,16 +2,23 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Charger;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth; // Tambahkan facade Auth di atas
+use Illuminate\Support\Facades\Auth; 
 
 class ChargingController extends Controller
 {
+    /**
+     * Halaman scan charger.
+     */
     public function scan()
     {
         return view('scan-charge');
     }
 
+    /**
+     * Memproses hasil scan QR.
+     */
     public function processScan(Request $request)
     {
         $request->validate([
@@ -26,11 +33,17 @@ class ChargingController extends Controller
     }
 
     /**
-     * @param mixed $charger
+     * Menampilkan detail charger.
      */
-    public function show($charger)
+    public function show(int $charger)
     {
-        return view('charger-detail', compact('charger'));
+        // Ambil charger berdasarkan primary key id_charger
+        $charger = Charger::findOrFail($charger);
+
+        return view(
+            'charger-detail',
+            compact('charger')
+        );
     }
 
     public function start(Request $request)

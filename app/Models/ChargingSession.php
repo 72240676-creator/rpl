@@ -18,46 +18,24 @@ class ChargingSession extends Model
     ];
 
     protected $casts = [
-        'start_time' => 'datetime',
-        'end_time' => 'datetime',
+        'start_time'          => 'datetime',
+        'end_time'            => 'datetime',
         'energy_consumed_kwh' => 'decimal:3',
-        'total_cost' => 'decimal:2',
+        'total_cost'          => 'decimal:2',
     ];
 
-    /**
-     * User yang melakukan charging.
-     */
     public function user()
     {
-        return $this->belongsTo(
-            User::class,
-            'user_id',
-            'id_user'
-        );
+        return $this->belongsTo(User::class, 'user_id');
     }
 
-    /**
-     * Charger yang digunakan.
-     */
     public function charger()
     {
-        return $this->belongsTo(
-            Charger::class,
-            'charger_id',
-            'id_charger'
-        );
+        return $this->belongsTo(Charger::class, 'charger_id', 'id_charger');
     }
-    
 
-    /**
-     * Kendaraan yang digunakan.
-     */
     public function vehicle()
     {
-        return $this->belongsTo(
-            Vehicle::class,
-            'vehicle_id',
-            'id_vehicle'
-        );
+        return $this->belongsTo(Vehicle::class, 'vehicle_id');
     }
 }
