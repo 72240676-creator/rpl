@@ -4,7 +4,33 @@
 
 @section('content')
 <div class="dashboard-container">
-    
+    <!-- Notifikasi Sukses -->
+    @if (session('success'))
+        <div id="toast-success" style="background: #ecfdf5; border-left: 5px solid #10b981; padding: 15px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; animation: slideDown 0.3s ease;">
+            <div style="color: #065f46; font-weight: 500;">
+                ✅ {{ session('success') }}
+            </div>
+            <button onclick="this.parentElement.style.display='none'" style="background: none; border: none; font-size: 18px; color: #065f46; cursor: pointer;">✕</button>
+        </div>
+    @endif
+
+    <!-- Notifikasi Error (Misal saldo tidak cukup) -->
+    @if (session('error'))
+        <div id="toast-error" style="background: #fef2f2; border-left: 5px solid #ef4444; padding: 15px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; animation: slideDown 0.3s ease;">
+            <div style="color: #991b1b; font-weight: 500;">
+                ❌ {{ session('error') }}
+            </div>
+            <button onclick="this.parentElement.style.display='none'" style="background: none; border: none; font-size: 18px; color: #991b1b; cursor: pointer;">✕</button>
+        </div>
+    @endif
+
+    <!-- Animasi Notifikasi -->
+    <style>
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
     <!-- Bagian Header -->
     <div class="dash-header">
         <div>
@@ -14,15 +40,53 @@
         </div>
 
         <!-- Kapsul Saldo & Poin (Referensi MyPertamina/PLN) -->
-        <div class="stats-row">
-            <div class="stat-pill">
-                <span>💳</span> Saldo Rp0
-            </div>
-            <div class="stat-pill">
-                <span>⚡</span> 0 Poin
-            </div>
+    <div class="stats-row" style="display: flex; align-items: center; gap: 12px;">
+        
+        <!-- Kartu Saldo Profesional dengan Fitur Sembunyikan/Tampilkan -->
+        <div style="display: flex; align-items: center; gap: 15px; background: #ffffff; padding: 12px 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+            <a href="{{ route('topup.index') }}" style="text-decoration: none; display: flex; align-items: center; gap: 10px;">
+                <div style="background: #e0f2fe; color: #0284c7; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px;">💳</div>
+                <div>
+                    <span style="font-size: 11px; color: #64748b; display: block; font-weight: 500;">Saldo Aktif</span>
+                    <span id="saldoText" style="font-size: 15px; font-weight: 700; color: #1e293b;">Rp {{ number_format(Auth::user()->saldo ?? 0, 0, ',', '.') }}</span>
+                </div>
+            </a>
+            
+            <!-- Tombol Ikon Mata untuk Menyembunyikan/Menampilkan Saldo -->
+            <button type="button" onclick="toggleSaldo()" style="background: none; border: none; cursor: pointer; color: #94a3b8; font-size: 14px; padding: 4px;" title="Sembunyikan/Tampilkan Saldo">
+                👁️
+            </button>
         </div>
+
+        <!-- Kartu Poin (Diselaraskan dengan Style Saldo) -->
+        <div style="display: flex; align-items: center; background: #ffffff; padding: 12px 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+            <a href="{{ route('points.index') }}" style="text-decoration: none; display: flex; align-items: center; gap: 10px;">
+                <div style="background: #fef3c7; color: #d97706; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px;">⚡</div>
+                <div>
+                    <span style="font-size: 11px; color: #64748b; display: block; font-weight: 500;">Poin Saya</span>
+                    <span style="font-size: 15px; font-weight: 700; color: #1e293b;">{{ number_format(Auth::user()->points ?? 0, 0, ',', '.') }} Poin</span>
+                </div>
+            </a>
+        </div>
+
     </div>
+
+    <script>
+        let isHidden = false;
+        const realSaldo = "Rp {{ number_format(Auth::user()->saldo ?? 0, 0, ',', '.') }}";
+
+        function toggleSaldo() {
+            const saldoElement = document.getElementById('saldoText');
+            if (isHidden) {
+                saldoElement.innerText = realSaldo;
+                isHidden = false;
+            } else {
+                saldoElement.innerText = "Rp •••••••";
+                isHidden = true;
+            }
+        }
+    </script>
+</div>
 
     <!-- Bagian Utama -->
     <div class="dash-body">
@@ -111,20 +175,13 @@
         
     </div>
 
-<<<<<<< HEAD
-    <!-- Tombol Mengambang / Scan Barcode -->
-    <button class="floating-scan">
-        <span style="font-size: 20px;">📷</span> Scan / Charge EV
-    </button>
-=======
-    //tombol scan barcode
+    <!-- Tombol Scan Barcode -->
     <a href="{{ route('scan.charge') }}"
     class="floating-scan"
     style="text-decoration: none; cursor: pointer;">
         <span style="font-size: 20px;">📷</span>
         Scan / Charge EV
     </a>
->>>>>>> 0ca36b79a6200b4e5f27905baa1fbc4ba7c56ca3
     
 </div>
 @endsection

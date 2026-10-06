@@ -11,17 +11,23 @@ return new class extends Migration
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
 
+            // Tambahkan id_user jika diperlukan langsung di tabel transaksi
+            $table->unsignedBigInteger('id_user')->nullable();
+
             $table->foreignId('session_id')
+                ->nullable()
                 ->constrained('charging_sessions')
                 ->onDelete('cascade');
 
-            $table->string('invoice_number')->unique();
+            $table->string('invoice_number')->unique()->nullable();
+
+            // Tambahkan kolom type dan description yang dipanggil di controller
+            $table->string('type')->default('payment');
+            $table->text('description')->nullable();
 
             $table->enum('payment_method', [
                 'e-wallet',
-                'credit_card',
-                'qr_payment'
-            ]);
+            ])->default('e-wallet');
 
             $table->decimal('amount', 12, 2);
 
@@ -30,7 +36,7 @@ return new class extends Migration
                 'success',
                 'failed',
                 'refunded'
-            ])->default('pending');
+            ])->default('success');
 
             $table->timestamp('paid_at')
                 ->nullable();

@@ -18,8 +18,8 @@ class ChargingSession extends Model
     ];
 
     protected $casts = [
-        'start_time' => 'datetime',
-        'end_time'   => 'datetime',
+        'start_time'          => 'datetime',
+        'end_time'            => 'datetime',
         'energy_consumed_kwh' => 'decimal:3',
         'total_cost'          => 'decimal:2',
     ];
@@ -31,7 +31,7 @@ class ChargingSession extends Model
 
     public function charger()
     {
-        return $this->belongsTo(Charger::class, 'charger_id');
+        return $this->belongsTo(Charger::class, 'charger_id', 'id_charger');
     }
 
     public function vehicle()
