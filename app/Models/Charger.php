@@ -14,9 +14,12 @@ class Charger extends Model
 
     // Primary key tabel chargers adalah id_charger
     protected $primaryKey = 'id_charger';
+    public $incrementing = true;
+    protected $keyType = 'int';
 
     protected $fillable = [
-        'id_location',
+        'id_charger',
+        'id_location', // Sesuaikan dengan kolom migrasi chargers
         'device_number',
         'connector_type',
         'max_power_kw',

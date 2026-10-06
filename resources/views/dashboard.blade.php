@@ -39,37 +39,218 @@
             <p class="dash-subtitle">Siap mengisi daya kendaraanmu hari ini?</p>
         </div>
 
-        <!-- Kapsul Saldo & Poin (Referensi MyPertamina/PLN) -->
-    <div class="stats-row" style="display: flex; align-items: center; gap: 12px;">
-        
-        <!-- Kartu Saldo Profesional dengan Fitur Sembunyikan/Tampilkan -->
-        <div style="display: flex; align-items: center; gap: 15px; background: #ffffff; padding: 12px 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
-            <a href="{{ route('topup.index') }}" style="text-decoration: none; display: flex; align-items: center; gap: 10px;">
-                <div style="background: #e0f2fe; color: #0284c7; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px;">💳</div>
-                <div>
-                    <span style="font-size: 11px; color: #64748b; display: block; font-weight: 500;">Saldo Aktif</span>
-                    <span id="saldoText" style="font-size: 15px; font-weight: 700; color: #1e293b;">Rp {{ number_format(Auth::user()->saldo ?? 0, 0, ',', '.') }}</span>
-                </div>
-            </a>
-            
-            <!-- Tombol Ikon Mata untuk Menyembunyikan/Menampilkan Saldo -->
-            <button type="button" onclick="toggleSaldo()" style="background: none; border: none; cursor: pointer; color: #94a3b8; font-size: 14px; padding: 4px;" title="Sembunyikan/Tampilkan Saldo">
-                👁️
-            </button>
+       <!-- Kapsul Riwayat, Saldo & Poin -->
+<div class="stats-row" style="
+    display: flex;
+    align-items: stretch;
+    justify-content: flex-end;
+    gap: 12px;
+    width: 100%;
+">
+
+    <!-- RIWAYAT -->
+    <a href="{{ route('charging.history') }}"
+       style="
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #ffffff;
+            padding: 12px 18px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            width: 180px;
+            height: 72px;
+            box-sizing: border-box;
+       ">
+
+        <div style="
+            flex-shrink: 0;
+            background: #e0e7ff;
+            color: #4f46e5;
+            width: 40px;
+            height: 40px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+        ">
+            📋
         </div>
 
-        <!-- Kartu Poin (Diselaraskan dengan Style Saldo) -->
-        <div style="display: flex; align-items: center; background: #ffffff; padding: 12px 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
-            <a href="{{ route('points.index') }}" style="text-decoration: none; display: flex; align-items: center; gap: 10px;">
-                <div style="background: #fef3c7; color: #d97706; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px;">⚡</div>
-                <div>
-                    <span style="font-size: 11px; color: #64748b; display: block; font-weight: 500;">Poin Saya</span>
-                    <span style="font-size: 15px; font-weight: 700; color: #1e293b;">{{ number_format(Auth::user()->points ?? 0, 0, ',', '.') }} Poin</span>
-                </div>
-            </a>
+        <div>
+            <span style="
+                font-size: 11px;
+                color: #64748b;
+                display: block;
+                font-weight: 500;
+                margin-bottom: 2px;
+            ">
+                Riwayat
+            </span>
+
+            <span style="
+                font-size: 16px;
+                font-weight: 700;
+                color: #1e293b;
+                white-space: nowrap;
+            ">
+                Charging
+            </span>
         </div>
+
+    </a>
+
+
+    <!-- SALDO -->
+    <div style="
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: #ffffff;
+        padding: 12px 18px;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        width: 220px;
+        height: 72px;
+        box-sizing: border-box;
+    ">
+
+        <a href="{{ route('topup.index') }}"
+           style="
+                text-decoration: none;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex: 1;
+                min-width: 0;
+           ">
+
+            <div style="
+                flex-shrink: 0;
+                background: #e0f2fe;
+                color: #0284c7;
+                width: 40px;
+                height: 40px;
+                border-radius: 9px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 17px;
+            ">
+                💳
+            </div>
+
+            <div style="min-width: 0;">
+                <span style="
+                    font-size: 11px;
+                    color: #64748b;
+                    display: block;
+                    font-weight: 500;
+                    margin-bottom: 2px;
+                ">
+                    Saldo Aktif
+                </span>
+
+                <span id="saldoText" style="
+                    font-size: 16px;
+                    font-weight: 700;
+                    color: #1e293b;
+                    white-space: nowrap;
+                ">
+                    Rp {{ number_format(Auth::user()->saldo ?? 0, 0, ',', '.') }}
+                </span>
+            </div>
+
+        </a>
+
+        <button type="button"
+                onclick="toggleSaldo()"
+                style="
+                    flex-shrink: 0;
+                    background: none;
+                    border: none;
+                    cursor: pointer;
+                    color: #94a3b8;
+                    font-size: 14px;
+                    padding: 4px;
+                "
+                title="Sembunyikan/Tampilkan Saldo">
+            👁️
+        </button>
 
     </div>
+
+
+    <!-- POIN --->
+    <div style="
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #ffffff;
+        padding: 12px 18px;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        width: 180px;
+        height: 72px;
+        box-sizing: border-box;
+    ">
+
+        <a href="{{ route('points.index') }}"
+           style="
+                text-decoration: none;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                width: 100%;
+                min-width: 0;
+           ">
+
+            <div style="
+                flex-shrink: 0;
+                background: #fef3c7;
+                color: #d97706;
+                width: 40px;
+                height: 40px;
+                border-radius: 9px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 17px;
+            ">
+                ⚡
+            </div>
+
+            <div style="min-width: 0;">
+                <span style="
+                    font-size: 11px;
+                    color: #64748b;
+                    display: block;
+                    font-weight: 500;
+                    margin-bottom: 2px;
+                ">
+                    Poin Saya
+                </span>
+
+                <span style="
+                    font-size: 16px;
+                    font-weight: 700;
+                    color: #1e293b;
+                    white-space: nowrap;
+                ">
+                    {{ number_format(Auth::user()->points ?? 0, 0, ',', '.') }} Poin
+                </span>
+            </div>
+
+        </a>
+
+    </div>
+
+</div>
 
     <script>
         let isHidden = false;

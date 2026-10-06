@@ -36,16 +36,18 @@ class ChargingController extends Controller
      * Menampilkan detail charger.
      */
     public function show(int $charger)
-    {
-        // Ambil charger berdasarkan primary key id_charger
-        $charger = Charger::findOrFail($charger);
+{
+    // Ambil charger berdasarkan primary key id_charger
+    $charger = Charger::findOrFail($charger);
 
-        return view(
-            'charger-detail',
-            compact('charger')
-        );
-    }
+    // Ambil semua kendaraan milik user yang sedang login
+    $vehicles = auth()->user()->vehicles;
 
+    return view(
+        'charger-detail',
+        compact('charger', 'vehicles')
+    );
+}
     public function start(Request $request)
     {
         // Validasi: Pastikan charger_id yang dikirim benar-benar ada di kolom id_charger tabel chargers

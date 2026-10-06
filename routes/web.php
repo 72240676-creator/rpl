@@ -129,6 +129,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/scan-charge/{charger}', [ChargingController::class, 'show'])->name('scan.charge.show');
 
 
+
     // ========================================================
     // CHARGING SESSION
     // ========================================================

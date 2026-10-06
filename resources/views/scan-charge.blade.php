@@ -4,6 +4,13 @@
 
 @section('content')
 
+<div style="max-width: 1200px; margin: 20px auto 0; padding: 0 20px;">
+    <a href="{{ route('dashboard') }}"
+       style="display: inline-flex; align-items: center; gap: 8px; background: #ffffff; color: #0f172a; text-decoration: none; padding: 10px 18px; border-radius: 10px; border: 1px solid #e2e8f0; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+        ← Kembali ke Dashboard
+    </a>
+</div>
+
 <div style="
     padding: 30px;
     background: #f8fafc;

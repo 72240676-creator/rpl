@@ -154,17 +154,14 @@ class ChargingSessionController extends Controller
              * NOTIFIKASI CHARGING SELESAI
              */
             if ($session->user) {
-                try {
-                    $session->user->notify(
-                        new ChargingFinishedNotification(
-                            'charging_finished',
-                            $session
-                        )
-                    );
-                } catch (\Exception $e) {
-                    report($e);
-                }
-            }
+            try {
+                $session->user->notify(
+                new ChargingFinishedNotification($session)
+        );
+    } catch (\Exception $e) {
+        report($e);
+    }
+}
         }
 
         /*
@@ -332,10 +329,7 @@ class ChargingSessionController extends Controller
             if ($session->user) {
                 try {
                     $session->user->notify(
-                        new ChargingFinishedNotification(
-                            'payment_success',
-                            $transaction
-                        )
+                        new ChargingFinishedNotification($session)
                     );
                 } catch (\Exception $e) {
                     report($e);
