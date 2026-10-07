@@ -185,11 +185,10 @@
     </div>
 
 
-    <!-- POIN --->
+    <!-- POIN SAYA -->
     <div style="
         display: flex;
         align-items: center;
-        gap: 10px;
         background: #ffffff;
         padding: 12px 18px;
         border-radius: 12px;
@@ -198,17 +197,18 @@
         width: 180px;
         height: 72px;
         box-sizing: border-box;
-    ">
+        transition: border-color 0.2s ease;
+    " onmouseover="this.style.borderColor='#10b981'" onmouseout="this.style.borderColor='#e2e8f0'">
 
         <a href="{{ route('points.index') }}"
-           style="
-                text-decoration: none;
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                width: 100%;
-                min-width: 0;
-           ">
+        style="
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            min-width: 0;
+        ">
 
             <div style="
                 flex-shrink: 0;
@@ -225,7 +225,7 @@
                 ⚡
             </div>
 
-            <div style="min-width: 0;">
+            <div style="min-width: 0; flex-grow: 1;">
                 <span style="
                     font-size: 11px;
                     color: #64748b;
@@ -237,12 +237,15 @@
                 </span>
 
                 <span style="
-                    font-size: 16px;
+                    font-size: 15px;
                     font-weight: 700;
                     color: #1e293b;
                     white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    display: block;
                 ">
-                    {{ number_format(Auth::user()->points ?? 0, 0, ',', '.') }} Poin
+                    {{ number_format(Auth::user()->points ?? Auth::user()->poin ?? 0, 0, ',', '.') }} Poin
                 </span>
             </div>
 

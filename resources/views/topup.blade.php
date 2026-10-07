@@ -54,31 +54,56 @@
 
         <!-- SECTION 1: NOMINAL -->
         <h3 style="font-size: 16px; font-weight: 600; color: #1e293b; margin-bottom: 15px;">1. Pilih Nominal Top Up</h3>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px;">
+        
+        <!-- Pilihan Preset -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
             <div class="radio-card">
-                <input type="radio" id="nom_50" name="nominal" value="50000" required>
+                <input type="radio" id="nom_50" name="preset_nominal" value="50000" onclick="selectPreset(50000)">
                 <label for="nom_50" style="text-align: center; font-weight: 600; color: #334155; font-size: 16px;">
                     Rp 50.000
                 </label>
             </div>
             <div class="radio-card">
-                <input type="radio" id="nom_100" name="nominal" value="100000">
+                <input type="radio" id="nom_100" name="preset_nominal" value="100000" onclick="selectPreset(100000)">
                 <label for="nom_100" style="text-align: center; font-weight: 600; color: #334155; font-size: 16px;">
                     Rp 100.000
                 </label>
             </div>
             <div class="radio-card">
-                <input type="radio" id="nom_250" name="nominal" value="250000">
+                <input type="radio" id="nom_250" name="preset_nominal" value="250000" onclick="selectPreset(250000)">
                 <label for="nom_250" style="text-align: center; font-weight: 600; color: #334155; font-size: 16px;">
                     Rp 250.000
                 </label>
             </div>
             <div class="radio-card">
-                <input type="radio" id="nom_500" name="nominal" value="500000">
+                <input type="radio" id="nom_500" name="preset_nominal" value="500000" onclick="selectPreset(500000)">
                 <label for="nom_500" style="text-align: center; font-weight: 600; color: #334155; font-size: 16px;">
                     Rp 500.000
                 </label>
             </div>
+        </div>
+
+        <!-- Input Ketik Nominal Sendiri -->
+        <div style="margin-bottom: 30px;">
+            <label style="display: block; font-size: 13px; color: #64748b; margin-bottom: 6px; font-weight: 500;">
+                Atau Ketik Nominal Sendiri (Minimal Rp 10.000):
+            </label>
+            <div style="position: relative; display: flex; align-items: center;">
+                <span style="position: absolute; left: 14px; font-weight: 600; color: #64748b; font-size: 15px;">Rp</span>
+                <input type="number" 
+                       id="nominal_input" 
+                       name="nominal" 
+                       min="10000" 
+                       placeholder="Masukkan nominal" 
+                       required
+                       style="width: 100%; padding: 12px 14px 12px 42px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 15px; font-weight: 600; color: #1e293b; outline: none; transition: all 0.2s ease;"
+                       onfocus="this.style.borderColor='#10b981';" 
+                       onblur="this.style.borderColor='#e2e8f0';"
+                       oninput="handleCustomInput()">
+            </div>
+            <p id="error_msg" style="color: #ef4444; font-size: 12px; margin: 6px 0 0 0; display: none;">
+                Nominal top up minimal adalah Rp 10.000.
+            </p>
         </div>
 
         <!-- SECTION 2: METODE PEMBAYARAN -->
@@ -124,4 +149,29 @@
         </button>
     </form>
 </div>
+
+<script>
+    function selectPreset(amount) {
+        const input = document.getElementById('nominal_input');
+        input.value = amount;
+        validateNominal();
+    }
+
+    function handleCustomInput() {
+        // Lepas piliham radio preset jika pengguna mengetik angka sendiri
+        const radios = document.querySelectorAll('input[name="preset_nominal"]');
+        radios.forEach(radio => radio.checked = false);
+        validateNominal();
+    }
+
+    function validateNominal() {
+        const input = document.getElementById('nominal_input');
+        const errorMsg = document.getElementById('error_msg');
+        if (input.value && parseInt(input.value) < 10000) {
+            errorMsg.style.display = 'block';
+        } else {
+            errorMsg.style.display = 'none';
+        }
+    }
+</script>
 @endsection
