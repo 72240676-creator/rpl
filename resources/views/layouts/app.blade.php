@@ -511,7 +511,8 @@
             <div class="nav-menu">
                 @if(auth()->user()->peran === 'admin')
                     {{-- Dashboard tetap memakai halaman yang dikerjakan Darryl --}}
-                    <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                    <a href="{{ route('admin.dashboard') }}"
+                    class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                         🏠 Dashboard
                     </a>
                     <a href="{{ route('admin.stations.index') }}" class="{{ request()->routeIs('admin.stations.*') ? 'active' : '' }}">

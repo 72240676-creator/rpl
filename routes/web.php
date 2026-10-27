@@ -271,6 +271,12 @@ Route::middleware('auth')->group(function () {
         ->group(function () {
 
 
+        // Dashboard khusus Admin
+        Route::get('/dashboard', function () {
+            return view('admin.stations.dashboard');
+        })->name('dashboard');
+
+
             // --------------------------------------------------
             // Management Station / Location
             // --------------------------------------------------
