@@ -5,8 +5,93 @@
 @section('content')
 <!-- Memastikan CDN Tailwind CSS ter-load untuk tampilan rapi -->
 <script src="https://cdn.tailwindcss.com"></script>
+<style>
+    /* Animasi dan tampilan halaman Poin */
+    .poin-page a,
+    .poin-page button {
+        transition: all .25s ease;
+    }
 
-<div class="max-w-5xl mx-auto px-4 py-8">
+    /* Kartu saldo */
+    .poin-page .poin-hero {
+        background: linear-gradient(
+            120deg,
+            #fbbf24 0%,
+            #f97316 55%,
+            #ea580c 100%
+        );
+        box-shadow: 0 18px 40px rgba(234, 88, 12, .20);
+        transition: box-shadow .3s ease;
+    }
+
+    .poin-page .poin-hero:hover {
+        box-shadow: 0 22px 45px rgba(234, 88, 12, .28);
+    }
+
+    /* Kartu status akun dan nilai tukar */
+    .poin-page .poin-stat {
+        background: rgba(255, 255, 255, .14);
+        transition: background .25s ease, transform .25s ease;
+    }
+
+    .poin-page .poin-stat:hover {
+        background: rgba(255, 255, 255, .23);
+        transform: translateY(-3px);
+    }
+
+    /* Kartu voucher */
+    .poin-page .poin-voucher {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid #f1f5f9;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, .05);
+        transition:
+            transform .25s ease,
+            box-shadow .25s ease,
+            border-color .25s ease;
+    }
+
+    .poin-page .poin-voucher::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #fbbf24, #f97316);
+        transform: scaleX(.35);
+        transform-origin: left;
+        transition: transform .25s ease;
+    }
+
+    .poin-page .poin-voucher:hover {
+        transform: translateY(-5px);
+        border-color: #fed7aa;
+        box-shadow: 0 16px 30px rgba(124, 45, 18, .11);
+    }
+
+    .poin-page .poin-voucher:hover::before {
+        transform: scaleX(1);
+    }
+
+    /* Tombol penukaran */
+    .poin-page .poin-redeem:not(:disabled):hover {
+        transform: translateY(-2px);
+        box-shadow: 0 7px 16px rgba(217, 119, 6, .22);
+    }
+
+    .poin-page .poin-redeem:disabled {
+        opacity: .75;
+        cursor: not-allowed;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .poin-page * {
+            transition: none !important;
+        }
+    }
+</style>
+<div class="poin-page max-w-5xl mx-auto px-4 py-8">
 
     <!-- Tombol Kembali & Header Halaman -->
     <div class="flex items-center justify-between mb-6">
@@ -57,7 +142,7 @@
     @endphp
 
     <!-- Hero Card Poin -->
-    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 p-6 md:p-8 text-white shadow-xl mb-8">
+    <div class="poin-hero relative overflow-hidden rounded-3xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 p-6 md:p-8 text-white shadow-xl mb-8">
         <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
         <div class="absolute right-20 -top-10 w-32 h-32 bg-yellow-300/20 rounded-full blur-xl pointer-events-none"></div>
 
@@ -76,11 +161,11 @@
             </div>
 
             <div class="flex items-center gap-3">
-                <div class="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 text-center min-w-[120px]">
+                <div class="poin-stat bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 text-center min-w-[120px]">
                     <span class="text-xs text-amber-100 block">Status Akun</span>
                     <span class="text-sm font-bold text-white">Aktif</span>
                 </div>
-                <div class="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 text-center min-w-[120px]">
+                <div class="poin-stat bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 text-center min-w-[120px]">
                     <span class="text-xs text-amber-100 block">Nilai Tukar</span>
                     <span class="text-sm font-bold text-white">1 Poin = Rp 1.000</span>
                 </div>
@@ -100,7 +185,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
             
             <!-- Voucher 1 (5 Poin -> Saldo Rp 5.000) -->
-            <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+            <div class="poin-voucher bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition flex flex-col justify-between">
                 <div>
                     <div class="flex items-center justify-between mb-3">
                         <span class="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-100">
@@ -117,7 +202,7 @@
                     @csrf
                     <input type="hidden" name="points" value="5">
                     <button type="submit" 
-                        class="w-full py-2.5 px-4 rounded-xl text-xs font-bold transition {{ $userPoin >= 5 ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm cursor-pointer' : 'bg-gray-100 text-gray-400 cursor-not-allowed' }}"
+                        class="poin-redeem w-full py-2.5 px-4 rounded-xl text-xs font-bold transition {{ $userPoin >= 5 ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm cursor-pointer' : 'bg-gray-100 text-gray-400 cursor-not-allowed' }}"
                         {{ $userPoin < 5 ? 'disabled' : '' }}>
                         {{ $userPoin >= 5 ? 'Tukarkan Poin' : 'Poin Belum Cukup' }}
                     </button>
@@ -125,7 +210,7 @@
             </div>
 
             <!-- Voucher 2 (10 Poin -> Saldo Rp 10.000) -->
-            <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+            <div class="poin-voucher bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition flex flex-col justify-between">
                 <div>
                     <div class="flex items-center justify-between mb-3">
                         <span class="px-2.5 py-1 rounded-lg bg-sky-50 text-sky-700 text-xs font-bold border border-sky-100">
@@ -142,7 +227,7 @@
                     @csrf
                     <input type="hidden" name="points" value="10">
                     <button type="submit" 
-                        class="w-full py-2.5 px-4 rounded-xl text-xs font-bold transition {{ $userPoin >= 10 ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm cursor-pointer' : 'bg-gray-100 text-gray-400 cursor-not-allowed' }}"
+                        class="poin-redeem w-full py-2.5 px-4 rounded-xl text-xs font-bold transition {{ $userPoin >= 10 ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm cursor-pointer' : 'bg-gray-100 text-gray-400 cursor-not-allowed' }}"
                         {{ $userPoin < 10 ? 'disabled' : '' }}>
                         {{ $userPoin >= 10 ? 'Tukarkan Poin' : 'Poin Belum Cukup' }}
                     </button>
@@ -150,7 +235,7 @@
             </div>
 
             <!-- Voucher 3 (20 Poin -> Saldo Rp 20.000) -->
-            <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+            <div class="poin-voucher bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition flex flex-col justify-between">
                 <div>
                     <div class="flex items-center justify-between mb-3">
                         <span class="px-2.5 py-1 rounded-lg bg-purple-50 text-purple-700 text-xs font-bold border border-purple-100">
@@ -167,7 +252,7 @@
                     @csrf
                     <input type="hidden" name="points" value="20">
                     <button type="submit" 
-                        class="w-full py-2.5 px-4 rounded-xl text-xs font-bold transition {{ $userPoin >= 20 ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm cursor-pointer' : 'bg-gray-100 text-gray-400 cursor-not-allowed' }}"
+                        class="poin-redeem w-full py-2.5 px-4 rounded-xl text-xs font-bold transition {{ $userPoin >= 20 ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm cursor-pointer' : 'bg-gray-100 text-gray-400 cursor-not-allowed' }}"
                         {{ $userPoin < 20 ? 'disabled' : '' }}>
                         {{ $userPoin >= 20 ? 'Tukarkan Poin' : 'Poin Belum Cukup' }}
                     </button>
