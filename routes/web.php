@@ -13,6 +13,7 @@ use App\Http\Controllers\StationController;
 use App\Http\Controllers\WalletController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Middleware\AdminMiddleware;
+use App\Http\Controllers\PointController;
 use App\Models\Location;
 
 
@@ -85,6 +86,19 @@ Route::middleware('auth')->group(function () {
     Route::get('/points', function () {
         return view('points.index'); // Atau panggil PointController jika ada
     })->name('points.index');
+
+
+        Route::middleware(['auth'])->group(function () {
+        
+        // Route Halaman Utama & Fitur Penukaran Poin
+        Route::get('/points', [PointController::class, 'index'])->name('points.index');
+        Route::get('/tukar-poin', [PointController::class, 'index'])->name('poin.index'); // Alias jika dipanggil poin.index
+
+        // Route Proses Penukaran Poin (Redeem)
+        Route::post('/points/redeem', [PointController::class, 'redeem'])->name('points.redeem');
+        Route::post('/tukar-poin', [PointController::class, 'redeem'])->name('poin.redeem'); // Alias jika dipanggil poin.redeem
+
+    });
     
     // ========================================================
     // PROFILE & KENDARAAN
