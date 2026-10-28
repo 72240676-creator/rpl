@@ -199,6 +199,11 @@ Route::middleware('auth')->group(function () {
         ->name('admin.')
         ->group(function () {
 
+            // Dashboard khusus Admin
+            Route::get('/dashboard', function () {
+                return view('admin.stations.dashboard');
+            })->name('dashboard');
+
             // Management Station / Location
             Route::get('/stations', [StationController::class, 'index'])->name('stations.index');
             Route::post('/stations', [StationController::class, 'store'])->name('stations.store');
