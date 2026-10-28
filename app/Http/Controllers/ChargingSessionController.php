@@ -367,7 +367,12 @@ class ChargingSessionController extends Controller
         $user = Auth::user();
         $userId = $user->id_user ?? $user->id;
 
-        $histories = ChargingSession::where('user_id', $userId)
+        $histories = ChargingSession::with([
+                'charger.location',
+                'vehicle',
+                'transactions' => fn ($query) => $query->where('status', 'success')->latest('paid_at'),
+            ])
+            ->where('user_id', $userId)
             ->whereIn('status', ['completed', 'paid'])
             ->orderBy('end_time', 'desc')
             ->get();

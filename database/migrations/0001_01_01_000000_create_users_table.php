@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('password'); 
             $table->string('nomor_telepon')->nullable();
-            $table->enum('peran', ['admin', 'pengemudi'])->default('pengemudi');
+            $table->enum('peran', ['admin', 'operator', 'pengemudi'])->default('pengemudi');
             $table->enum('status_akun', ['aktif', 'nonaktif'])->default('aktif');
             $table->timestamps();
         });

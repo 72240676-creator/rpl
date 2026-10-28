@@ -38,4 +38,9 @@ class ChargingSession extends Model
     {
         return $this->belongsTo(Vehicle::class, 'vehicle_id');
     }
+
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class, 'session_id');
+    }
 }

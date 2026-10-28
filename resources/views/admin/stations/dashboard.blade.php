@@ -54,29 +54,6 @@
         opacity: .95;
     }
 
-    .btn-kelola-spklu {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        padding: 12px 18px;
-        background: white;
-        color: #047857;
-        border-radius: 9px;
-        text-decoration: none;
-        font-size: 13px;
-        font-weight: 700;
-        white-space: nowrap;
-        transition: all .2s ease;
-    }
-
-    .btn-kelola-spklu:hover {
-        background: #ecfdf5;
-        color: #047857;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, .12);
-    }
-
     .stats-grid {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -93,6 +70,59 @@
         align-items: center;
         gap: 16px;
         box-shadow: 0 4px 12px rgba(15, 23, 42, .025);
+    }
+
+    .stat-card-button {
+        width: 100%;
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+        transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+    }
+
+    .stat-card-button:hover,
+    .stat-card-button[aria-expanded="true"] {
+        border-color: #fdba74;
+        box-shadow: 0 8px 20px rgba(234, 88, 12, .09);
+        transform: translateY(-1px);
+    }
+
+    .stat-card-link {
+        color: inherit;
+        text-decoration: none;
+        transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+    }
+
+    .stat-card-link:hover {
+        border-color: #6ee7b7;
+        box-shadow: 0 8px 20px rgba(5, 150, 105, .09);
+        transform: translateY(-2px);
+    }
+
+    .stat-card-link:active,
+    .stat-card-button:active {
+        transform: translateY(0);
+    }
+
+    .stat-card-link:focus-visible {
+        outline: 3px solid rgba(16, 185, 129, .3);
+        outline-offset: 3px;
+    }
+
+    .stat-card-button:focus-visible {
+        outline: 3px solid rgba(249, 115, 22, .3);
+        outline-offset: 3px;
+    }
+
+    .stat-card-link .stat-note {
+        color: #047857;
+        font-weight: 650;
+    }
+
+    .stat-card-button .stat-note {
+        color: #c2410c;
+        font-weight: 650;
     }
 
     .stat-icon {
@@ -228,9 +258,9 @@
         border-radius: 20px;
     }
 
-    .fill-green { background: #10b981; width: 77%; }
-    .fill-gray { background: #94a3b8; width: 14%; }
-    .fill-orange { background: #f59e0b; width: 8%; }
+    .fill-green { background: #10b981; }
+    .fill-gray { background: #94a3b8; }
+    .fill-orange { background: #f59e0b; }
 
     .system-list {
         border: 1px solid #e8edf4;
@@ -369,6 +399,145 @@
         line-height: 1.7;
     }
 
+    .inspection-panel {
+        margin-bottom: 20px;
+    }
+
+    .inspection-panel[hidden] {
+        display: none;
+    }
+
+    .inspection-panel {
+        animation: inspection-panel-in .2s ease-out;
+    }
+
+    @keyframes inspection-panel-in {
+        from { opacity: 0; transform: translateY(-6px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .inspection-list {
+        display: grid;
+        gap: 12px;
+    }
+
+    .inspection-report {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(240px, .75fr);
+        gap: 18px;
+        padding: 17px;
+        border: 1px solid #f1e4c6;
+        border-radius: 13px;
+        background: linear-gradient(110deg, #fffdf7, #ffffff);
+    }
+
+    .inspection-report-main {
+        min-width: 0;
+    }
+
+    .inspection-report-title {
+        margin: 0 0 6px;
+        color: #1e293b;
+        font-size: 13px;
+        font-weight: 750;
+    }
+
+    .inspection-report-meta,
+    .inspection-report-time {
+        color: #64748b;
+        font-size: 11px;
+        line-height: 1.6;
+    }
+
+    .inspection-report-note {
+        margin: 10px 0 0;
+        padding: 10px 12px;
+        border-radius: 9px;
+        color: #78350f;
+        background: #fffbeb;
+        font-size: 12px;
+        line-height: 1.6;
+        overflow-wrap: anywhere;
+    }
+
+    .inspection-report-form {
+        display: grid;
+        align-content: start;
+        gap: 8px;
+    }
+
+    .inspection-report-form form {
+        display: grid;
+        gap: 8px;
+    }
+
+    .inspection-report-form label {
+        color: #475569;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .inspection-report-form textarea {
+        width: 100%;
+        min-height: 66px;
+        padding: 9px 10px;
+        box-sizing: border-box;
+        resize: vertical;
+        border: 1px solid #dbe3eb;
+        border-radius: 9px;
+        color: #334155;
+        font: inherit;
+        font-size: 12px;
+    }
+
+    .inspection-report-form textarea:focus {
+        border-color: #34d399;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, .12);
+    }
+
+    .inspection-report-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .inspection-report-button {
+        min-height: 34px;
+        padding: 7px 10px;
+        border: 0;
+        border-radius: 8px;
+        color: #fff;
+        background: #059669;
+        font: inherit;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .inspection-report-button:hover {
+        background: #047857;
+    }
+
+    .inspection-report-button.resolve {
+        color: #047857;
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+    }
+
+    .inspection-report-button.resolve:hover {
+        background: #d1fae5;
+    }
+
+    .inspection-empty {
+        padding: 17px;
+        border: 1px solid #a7f3d0;
+        border-radius: 11px;
+        color: #047857;
+        background: #f0fdf4;
+        font-size: 12px;
+    }
+
     .dashboard-footer {
         text-align: center;
         color: #94a3b8;
@@ -420,6 +589,10 @@
             margin-left: 51px;
             padding-top: 0;
         }
+
+        .inspection-report {
+            grid-template-columns: minmax(0, 1fr);
+        }
     }
 </style>
 
@@ -436,55 +609,120 @@
         <div class="welcome-content">
             <div>
                 <h2>⚡ Selamat datang, {{ Auth::user()->nama ?? Auth::user()->name ?? 'Super Admin' }}!</h2>
-                <p>Pantau stasiun, unit charger, dan aktivitas sistem melalui satu halaman.</p>
+                <p>Pantau ringkasan operasional dan informasi sistem melalui satu halaman.</p>
             </div>
-
-            <a href="{{ route('admin.stations.index') }}" class="btn-kelola-spklu">
-                🏢 Kelola SPKLU <span>→</span>
-            </a>
         </div>
     </div>
 
-    {{-- Statistik: data contoh --}}
+    @if (session('success'))
+        <div role="status" style="margin-bottom:18px;padding:12px 15px;border:1px solid #a7f3d0;border-radius:10px;color:#047857;background:#ecfdf5;font-size:13px;">
+            {{ session('success') }}
+        </div>
+    @endif
+    @if ($errors->any())
+        <div role="alert" style="margin-bottom:18px;padding:12px 15px;border:1px solid #fecaca;border-radius:10px;color:#b91c1c;background:#fef2f2;font-size:13px;">
+            @foreach ($errors->all() as $error)
+                <div>{{ $error }}</div>
+            @endforeach
+        </div>
+    @endif
+
     <div class="stats-grid">
 
-        <div class="stat-card">
+        <a class="stat-card stat-card-link" href="{{ route('locations.index') }}" aria-label="Lihat daftar stasiun SPKLU">
             <div class="stat-icon icon-green">🏢</div>
             <div>
                 <div class="stat-label">Total Stasiun</div>
-                <div class="stat-number">12</div>
-                <div class="stat-note">Stasiun SPKLU terdaftar</div>
+                <div class="stat-number" id="admin-total-stations">{{ $stats['locations'] }}</div>
+                <div class="stat-note">Klik untuk melihat stasiun →</div>
             </div>
-        </div>
+        </a>
 
-        <div class="stat-card">
+        <a class="stat-card stat-card-link" href="{{ route('locations.index') }}" aria-label="Lihat stasiun dan unit charger">
             <div class="stat-icon icon-blue">🔌</div>
             <div>
                 <div class="stat-label">Total Unit Charger</div>
-                <div class="stat-number">36</div>
-                <div class="stat-note">Unit charger terdaftar</div>
+                <div class="stat-number" id="admin-total-chargers">{{ $stats['chargers'] }}</div>
+                <div class="stat-note">Klik untuk melihat unit charger →</div>
             </div>
-        </div>
+        </a>
 
-        <div class="stat-card">
+        <a class="stat-card stat-card-link" href="{{ route('locations.index') }}" aria-label="Lihat ketersediaan charger di stasiun">
             <div class="stat-icon icon-green">⚡</div>
             <div>
                 <div class="stat-label">Charger Online</div>
-                <div class="stat-number">28</div>
-                <div class="stat-note">77% dari total unit</div>
+                <div class="stat-number" id="admin-online-chargers">{{ $stats['online_chargers'] }}</div>
+                <div class="stat-note">{{ $chargerStatuses[0]['percentage'] }}% online · Klik untuk detail →</div>
             </div>
-        </div>
+        </a>
 
-        <div class="stat-card">
-            <div class="stat-icon icon-orange">⚠️</div>
-            <div>
-                <div class="stat-label">Perlu Perhatian</div>
-                <div class="stat-number" style="color:#ea580c;">3</div>
-                <div class="stat-note">Offline atau maintenance</div>
-            </div>
-        </div>
+        <button
+            class="stat-card stat-card-button"
+            id="admin-attention-toggle"
+            type="button"
+            aria-expanded="false"
+            aria-controls="admin-inspection-reports"
+        >
+            <span class="stat-icon icon-orange" aria-hidden="true">⚠️</span>
+            <span>
+                <span class="stat-label" style="display:block;">Perlu Perhatian</span>
+                <span class="stat-number" id="admin-attention-chargers" style="display:block;color:#ea580c;">{{ $stats['attention_chargers'] }}</span>
+                <span class="stat-note" style="display:block;">Klik untuk melihat laporan</span>
+            </span>
+        </button>
 
     </div>
+
+    <section class="dashboard-card inspection-panel" id="admin-inspection-reports" aria-labelledby="inspection-reports-heading" hidden>
+        <div class="card-heading">
+            <div class="heading-icon" style="background:#fff7ed;">🛠️</div>
+            <div>
+                <h3 id="inspection-reports-heading">Laporan Pemeriksaan Charger</h3>
+                <p>Laporan operator tersimpan bersama data charger dan dapat diperbarui di sini.</p>
+            </div>
+        </div>
+
+        <div class="inspection-list">
+            @forelse($inspectionReports as $report)
+                <article class="inspection-report">
+                    <div class="inspection-report-main">
+                        <h4 class="inspection-report-title">{{ $report->device_number }}</h4>
+                        <div class="inspection-report-meta">
+                            {{ $report->location?->nama_lokasi ?? 'Lokasi tidak tersedia' }}
+                            · Status charger: {{ ucfirst($report->status) }}{{ $report->is_online ? ' · Online' : ' · Offline' }}
+                        </div>
+                        <p class="inspection-report-note">{{ $report->inspection_note }}</p>
+                        <div class="inspection-report-time">
+                            Dilaporkan oleh {{ $report->inspectionReporter?->nama ?? 'Operator' }}
+                            @if($report->inspection_reported_at)
+                                · {{ $report->inspection_reported_at->timezone('Asia/Jakarta')->format('d/m/Y H:i') }}
+                            @endif
+                        </div>
+                    </div>
+                    <div class="inspection-report-form">
+                        <form action="{{ route('admin.chargers.inspection.update', $report->id_charger) }}" method="POST">
+                            @csrf
+                            @method('PUT')
+                            <input type="hidden" name="needs_inspection" value="1">
+                            <label for="inspection-note-{{ $report->id_charger }}">Perbarui catatan</label>
+                            <textarea id="inspection-note-{{ $report->id_charger }}" name="inspection_note" maxlength="1000" required>{{ $report->inspection_note }}</textarea>
+                            <div class="inspection-report-actions">
+                                <button class="inspection-report-button" type="submit">Simpan perubahan</button>
+                            </div>
+                        </form>
+                        <form action="{{ route('admin.chargers.inspection.update', $report->id_charger) }}" method="POST">
+                            @csrf
+                            @method('PUT')
+                            <input type="hidden" name="needs_inspection" value="0">
+                            <button class="inspection-report-button resolve" type="submit">Tandai selesai</button>
+                        </form>
+                    </div>
+                </article>
+            @empty
+                <div class="inspection-empty">Tidak ada laporan pemeriksaan yang menunggu tindak lanjut.</div>
+            @endforelse
+        </div>
+    </section>
 
     {{-- Status Operasional dan Ringkasan Sistem --}}
     <div class="dashboard-grid">
@@ -494,48 +732,28 @@
                 <div class="heading-icon">📊</div>
                 <div>
                     <h3>Status Operasional Charger</h3>
-                    <p>Contoh distribusi status unit charger.</p>
+                    <p>Status terkini unit charger yang terdaftar.</p>
                 </div>
             </div>
 
-            <div class="status-item">
-                <div class="status-info">
-                    <span class="status-name">
-                        <span class="status-dot dot-green"></span>
-                        Online
-                    </span>
-                    <span class="status-count">28 unit · 77%</span>
+            @foreach ($chargerStatuses as $status)
+                <div class="status-item">
+                    <div class="status-info">
+                        <span class="status-name">
+                            <span class="status-dot dot-{{ $status['color'] }}"></span>
+                            {{ $status['label'] }}
+                        </span>
+                        <span class="status-count">{{ $status['count'] }} unit · {{ $status['percentage'] }}%</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill fill-{{ $status['color'] }}" style="width: {{ $status['percentage'] }}%;"></div>
+                    </div>
                 </div>
-                <div class="progress-track">
-                    <div class="progress-fill fill-green"></div>
-                </div>
-            </div>
+            @endforeach
 
-            <div class="status-item">
-                <div class="status-info">
-                    <span class="status-name">
-                        <span class="status-dot dot-gray"></span>
-                        Offline
-                    </span>
-                    <span class="status-count">5 unit · 14%</span>
-                </div>
-                <div class="progress-track">
-                    <div class="progress-fill fill-gray"></div>
-                </div>
-            </div>
-
-            <div class="status-item">
-                <div class="status-info">
-                    <span class="status-name">
-                        <span class="status-dot dot-orange"></span>
-                        Maintenance
-                    </span>
-                    <span class="status-count">3 unit · 8%</span>
-                </div>
-                <div class="progress-track">
-                    <div class="progress-fill fill-orange"></div>
-                </div>
-            </div>
+            @if ($stats['chargers'] === 0)
+                <p style="margin: 18px 0 0; color: #718096; font-size: 12px;">Belum ada data charger.</p>
+            @endif
         </div>
 
         <div class="dashboard-card">
@@ -563,7 +781,7 @@
 
                 <div class="system-row">
                     <span class="system-label">Lingkungan</span>
-                    <span class="system-value">Development</span>
+                    <span class="system-value">{{ ucfirst(app()->environment()) }}</span>
                 </div>
 
                 <div class="system-row">
@@ -583,38 +801,32 @@
                 <div class="heading-icon">📋</div>
                 <div>
                     <h3>Aktivitas Terbaru</h3>
-                    <p>Contoh aktivitas yang dapat dicatat sistem.</p>
+                    <p>Sesi charging terbaru yang tercatat di sistem.</p>
                 </div>
             </div>
 
             <div class="activity-list">
 
-                <div class="activity-item">
-                    <div class="activity-icon">📝</div>
-                    <div class="activity-text">
-                        <h4>Pembaruan Data Stasiun</h4>
-                        <p>Informasi stasiun diperbarui oleh administrator.</p>
+                @forelse ($recentSessions as $session)
+                    @php
+                        $statusLabel = match ($session->status) {
+                            'ongoing' => 'Sedang berlangsung',
+                            'paid' => 'Selesai dan dibayar',
+                            'completed' => 'Menunggu pembayaran',
+                            default => ucfirst($session->status),
+                        };
+                    @endphp
+                    <div class="activity-item">
+                        <div class="activity-icon" style="background:#dbeafe;">🔌</div>
+                        <div class="activity-text">
+                            <h4>Sesi #{{ $session->id }} · {{ $session->user?->nama ?? 'Pengguna' }}</h4>
+                            <p>{{ $session->charger?->device_number ?? 'Charger' }} · {{ $session->charger?->location?->nama_lokasi ?? 'Lokasi tidak tersedia' }}<br>{{ $statusLabel }}</p>
+                        </div>
+                        <div class="activity-time">{{ $session->start_time?->timezone('Asia/Jakarta')->format('d/m H:i') ?? '-' }}</div>
                     </div>
-                    <div class="activity-time">Contoh</div>
-                </div>
-
-                <div class="activity-item">
-                    <div class="activity-icon" style="background:#dbeafe;">🔌</div>
-                    <div class="activity-text">
-                        <h4>Pengelolaan Unit Charger</h4>
-                        <p>Data unit charger dapat dikelola melalui menu Kelola SPKLU.</p>
-                    </div>
-                    <div class="activity-time">Contoh</div>
-                </div>
-
-                <div class="activity-item">
-                    <div class="activity-icon" style="background:#f3e8ff;">🔔</div>
-                    <div class="activity-text">
-                        <h4>Pemeriksaan Notifikasi</h4>
-                        <p>Informasi dan pemberitahuan sistem tersedia di menu Notifikasi.</p>
-                    </div>
-                    <div class="activity-time">Contoh</div>
-                </div>
+                @empty
+                    <p style="margin: 0; color: #718096; font-size: 12px;">Belum ada aktivitas charging.</p>
+                @endforelse
 
             </div>
         </div>
@@ -649,8 +861,8 @@
                 </div>
 
                 <div class="admin-tip">
-                    💡 Gunakan menu Kelola SPKLU untuk mengelola data stasiun dan unit charger.
-                    Periksa menu Notifikasi untuk melihat pemberitahuan sistem.
+                    💡 Pengelolaan stasiun dan unit charger ditangani oleh operator.
+                    Periksa menu Notifikasi untuk melihat notifikasi sistem.
                 </div>
             </div>
         </div>
@@ -662,4 +874,22 @@
     </div>
 
 </div>
+
+<script>
+    (() => {
+        const toggle = document.getElementById('admin-attention-toggle');
+        const panel = document.getElementById('admin-inspection-reports');
+        if (!toggle || !panel) return;
+
+        toggle.addEventListener('click', () => {
+            const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
+            toggle.setAttribute('aria-expanded', String(!isExpanded));
+            panel.hidden = isExpanded;
+
+            if (!isExpanded) {
+                panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        });
+    })();
+</script>
 @endsection

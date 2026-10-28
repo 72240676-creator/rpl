@@ -515,16 +515,19 @@
                     class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                         🏠 Dashboard
                     </a>
-                    <a href="{{ route('admin.stations.index') }}" class="{{ request()->routeIs('admin.stations.*') ? 'active' : '' }}">
-                        ⚙️ Kelola SPKLU
-                    </a>
                     <a href="{{ route('notifications.index') }}" class="{{ request()->routeIs('notifications.*') ? 'active' : '' }}">
                         🔔 Notifikasi
                     </a>
+                @elseif(auth()->user()->peran === 'operator')
+                    <a href="{{ route('operator.dashboard') }}" class="{{ request()->routeIs('operator.dashboard') ? 'active' : '' }}">
+                        🏠 Dashboard
+                    </a>
+                    <a href="{{ route('operator.stations.index') }}" class="{{ request()->routeIs('operator.stations.*') ? 'active' : '' }}">
+                        ⚡ Kelola SPKLU
+                    </a>
                 @else
                     {{-- Menu user biasa tetap dipertahankan --}}
-                    <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">🏠 Dashboard</a>
-                    <a href="{{ route('notifications.index') }}" class="{{ request()->routeIs('notifications.*') ? 'active' : '' }}">🔔 Pemberitahuan</a>
+                    <a href="{{ route('notifications.index') }}" class="{{ request()->routeIs('notifications.*') ? 'active' : '' }}">🔔 Notifikasi</a>
                     <a href="{{ url('/profile') }}" class="{{ request()->is('profile*') ? 'active' : '' }}">👤 Profil &amp; Kendaraan</a>
                 @endif
 

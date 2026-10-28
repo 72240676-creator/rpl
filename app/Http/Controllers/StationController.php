@@ -52,7 +52,7 @@ class StationController extends Controller
 
         $location->update($request->all());
 
-        return redirect()->route('admin.stations.index')->with('success', 'Data stasiun berhasil diperbarui!');
+        return redirect()->route('operator.stations.index')->with('success', 'Data stasiun berhasil diperbarui!');
     }
 
 
@@ -84,6 +84,18 @@ class StationController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Perangkat charger berhasil ditambahkan!');
+    }
+
+    public function updateChargerTariff(Request $request, int $id_charger)
+    {
+        $validated = $request->validate([
+            'price_per_kwh' => ['required', 'numeric', 'min:1', 'max:99999999.99'],
+        ]);
+
+        $charger = Charger::findOrFail($id_charger);
+        $charger->update(['price_per_kwh' => $validated['price_per_kwh']]);
+
+        return back()->with('success', "Tarif charger {$charger->device_number} berhasil diperbarui.");
     }
 
     public function destroyCharger(int $id_charger)
