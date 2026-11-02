@@ -138,6 +138,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/locations', [LocationController::class, 'operatorIndex'])->name('locations');
         Route::post('/locations', [LocationController::class, 'store'])->name('locations.store');
         Route::put('/locations/{id}', [LocationController::class, 'update'])->name('locations.update');
+
+        Route::get('/chargers/{id_charger}/tariff', [OperatorDashboardController::class, 'editTariff'])
+        ->name('chargers.tariff.edit');
+
+        Route::get('/reports/inspections', [OperatorDashboardController::class, 'inspectionReports'])
+        ->name('reports.inspections');
     });
 
 

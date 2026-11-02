@@ -71,6 +71,22 @@ class OperatorDashboardController extends Controller
                 : "Pemeriksaan charger {$charger->device_number} telah diselesaikan."
         );
     }
+        public function editTariff(int $id_charger): View
+    {
+        $charger = Charger::with('location')->findOrFail($id_charger);
+
+        return view('operator.chargers.tariff', compact('charger'));
+    }
+
+    public function inspectionReports(): View
+    {
+        $chargers = Charger::with(['location', 'inspectionReporter'])
+            ->where('needs_inspection', true)
+            ->latest('inspection_reported_at')
+            ->get();
+
+        return view('operator.reports.inspections', compact('chargers'));
+    }
 
     private function stats(): array
     {
