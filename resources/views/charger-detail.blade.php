@@ -5,18 +5,21 @@
 @section('content')
 
 @php
-    /*
-     * $charger pada halaman ini bisa berupa:
-     * - ID charger (string/integer), atau
-     * - object App\Models\Charger
-     */
     $chargerId = is_object($charger)
         ? ($charger->id_charger ?? $charger->id)
         : $charger;
 
-    $connectorType = is_object($charger) ? ($charger->connector_type ?? 'Fast Charging (DC)') : 'Fast Charging (DC)';
-    $maxPower = is_object($charger) ? ($charger->max_power_kw ?? 50) : 50;
-    $pricePerKwh = is_object($charger) ? ($charger->price_per_kwh ?? 2467) : 2467;
+    $connectorType = is_object($charger)
+        ? ($charger->connector_type ?? 'Fast Charging (DC)')
+        : 'Fast Charging (DC)';
+
+    $maxPower = is_object($charger)
+        ? ($charger->max_power_kw ?? 50)
+        : 50;
+
+    $pricePerKwh = is_object($charger)
+        ? ($charger->price_per_kwh ?? 2467)
+        : 2467;
 @endphp
 
 <div style="
@@ -54,7 +57,6 @@
 
     </div>
 
-
     <div style="
         background: #ffffff;
         border-radius: 20px;
@@ -63,7 +65,6 @@
         box-shadow: 0 10px 25px rgba(0,0,0,0.05);
     ">
 
-        <!-- BLOK NOTIFIKASI ERROR (Muncul jika validasi/session gagal) -->
         @if (session('error'))
             <div style="
                 background-color: #fef2f2;
@@ -96,7 +97,6 @@
             </div>
         @endif
 
-        {{-- Header Charger --}}
         <div style="
             display: flex;
             justify-content: space-between;
@@ -124,7 +124,6 @@
 
         </div>
 
-        {{-- Detail Spesifikasi Charger --}}
         <div style="
             background: #f8fafc;
             border-radius: 12px;
@@ -132,14 +131,12 @@
             margin-bottom: 25px;
         ">
 
-            {{-- Tipe Daya / Konektor --}}
             <div style="
                 display: flex;
                 justify-content: space-between;
                 padding: 10px 0;
                 border-bottom: 1px solid #e2e8f0;
             ">
-
                 <span style="color: #64748b;">
                     Tipe Daya
                 </span>
@@ -147,17 +144,14 @@
                 <strong style="color: #0f172a;">
                     {{ $connectorType }}
                 </strong>
-
             </div>
 
-            {{-- Daya Maksimal --}}
             <div style="
                 display: flex;
                 justify-content: space-between;
                 padding: 10px 0;
                 border-bottom: 1px solid #e2e8f0;
             ">
-
                 <span style="color: #64748b;">
                     Daya Maksimal
                 </span>
@@ -165,16 +159,13 @@
                 <strong style="color: #0f172a;">
                     {{ $maxPower }} kW
                 </strong>
-
             </div>
 
-            {{-- Tarif --}}
             <div style="
                 display: flex;
                 justify-content: space-between;
                 padding: 10px 0;
             ">
-
                 <span style="color: #64748b;">
                     Tarif per kWh
                 </span>
@@ -182,12 +173,10 @@
                 <strong style="color: #2563eb;">
                     Rp {{ number_format((float)$pricePerKwh, 0, ',', '.') }} / kWh
                 </strong>
-
             </div>
 
         </div>
 
-        {{-- Catatan Petunjuk --}}
         <div style="
             background: #fffbeb;
             color: #92400e;
@@ -201,7 +190,12 @@
         </div>
 
         {{-- FORM MULAI PENGISIAN --}}
-        <form action="{{ route('charging.start') }}" method="POST">
+        <form
+            id="startChargingForm"
+            action="{{ route('charging.start') }}"
+            method="POST"
+            style="margin: 0; width: 100%;"
+        >
 
             @csrf
 
@@ -211,12 +205,58 @@
                 value="{{ $chargerId }}"
             >
 
+            {{-- Pilihan Kendaraan --}}
+            <div style="margin-bottom: 20px;">
+                <label
+                    for="vehicle_id"
+                    style="
+                        display: block;
+                        margin-bottom: 8px;
+                        font-weight: 600;
+                        color: #0f172a;
+                        font-size: 14px;
+                    "
+                >
+                    Pilih Kendaraan untuk Charging:
+                </label>
+
+                <select
+                    name="vehicle_id"
+                    id="vehicle_id"
+                    required
+                    style="
+                        width: 100%;
+                        padding: 12px;
+                        border-radius: 12px;
+                        border: 1px solid #cbd5e1;
+                        background: #f8fafc;
+                        color: #0f172a;
+                        font-size: 14px;
+                    "
+                >
+                    <option value="">
+                        -- Pilih Kendaraan Anda --
+                    </option>
+
+                    @if(isset($vehicles) && count($vehicles) > 0)
+                        @foreach($vehicles as $vehicle)
+                            <option value="{{ $vehicle->id_vehicle }}">
+                                {{ $vehicle->merek }}
+                                {{ $vehicle->model }}
+                                ({{ $vehicle->nomor_polisi }})
+                            </option>
+                        @endforeach
+                    @endif
+                </select>
+            </div>
+
             <div style="
                 display: flex;
                 gap: 12px;
                 flex-wrap: wrap;
                 align-items: center;
             ">
+
                 <button
                     type="submit"
                     style="
@@ -237,20 +277,23 @@
                 </button>
 
                 @if (Route::has('scan.charge'))
-                    <a href="{{ route('scan.charge') }}"
-                       style="
-                           background: #f1f5f9;
-                           color: #475569;
-                           padding: 16px 20px;
-                           border-radius: 14px;
-                           text-decoration: none;
-                           font-weight: 600;
-                           font-size: 14px;
-                           white-space: nowrap;
-                       ">
+                    <a
+                        href="{{ route('scan.charge') }}"
+                        style="
+                            background: #f1f5f9;
+                            color: #475569;
+                            padding: 16px 20px;
+                            border-radius: 14px;
+                            text-decoration: none;
+                            font-weight: 600;
+                            font-size: 14px;
+                            white-space: nowrap;
+                        "
+                    >
                         ← Scan Lagi
                     </a>
                 @endif
+
             </div>
 
         </form>

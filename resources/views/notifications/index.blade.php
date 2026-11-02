@@ -2,20 +2,318 @@
 
 @section('content')
 
-<div style="
-    max-width: 900px;
+<style>
+    .notification-page {
+        width: 100%;
+        max-width: 1080px;
+        margin: 42px auto !important;
+        padding: 0 28px !important;
+        box-sizing: border-box;
+    }
+
+    .notification-back {
+        margin-bottom: 20px !important;
+    }
+
+    .notification-back a {
+        color: #64748b !important;
+        font-weight: 600 !important;
+        transition: color .2s ease;
+    }
+
+    .notification-back a:hover {
+        color: #047857 !important;
+    }
+
+    .notification-header {
+        align-items: center !important;
+        padding: 26px 30px;
+        margin-bottom: 22px !important;
+        border: 1px solid #e5eee9;
+        border-radius: 20px;
+        background: linear-gradient(115deg, #ffffff 0%, #f0fdf7 100%);
+        box-shadow: 0 8px 26px rgba(15, 23, 42, .04);
+    }
+
+    .notification-heading {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .notification-heading-icon,
+    .notification-item-icon,
+    .notification-empty-icon {
+        display: grid;
+        place-items: center;
+        flex: 0 0 auto;
+        color: #047857;
+        background: #ecfdf5;
+    }
+
+    .notification-heading-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 16px;
+        background: #d1fae5;
+    }
+
+    .notification-heading-icon svg {
+        width: 25px;
+        height: 25px;
+    }
+
+    .notification-title {
+        color: #0f172a !important;
+        font-size: 25px !important;
+        letter-spacing: -.5px;
+    }
+
+    .notification-subtitle {
+        color: #64748b !important;
+        line-height: 1.6;
+    }
+
+    .notification-mark-all {
+        border: 0 !important;
+        padding: 11px 17px !important;
+        color: #ffffff !important;
+        background: #059669 !important;
+        box-shadow: 0 4px 10px rgba(5, 150, 105, .18);
+        transition: background .2s ease, transform .2s ease;
+    }
+
+    .notification-mark-all:hover {
+        background: #047857 !important;
+        transform: translateY(-1px);
+    }
+
+    .notification-flash {
+        border-radius: 12px !important;
+        margin-bottom: 20px;
+    }
+
+    .notification-card {
+        overflow: hidden;
+        border: 1px solid #e8edf2 !important;
+        border-radius: 18px !important;
+        background: #ffffff;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, .055) !important;
+    }
+
+    .notification-item {
+        min-width: 0;
+        gap: 18px;
+        padding: 21px 26px !important;
+        border-bottom: 1px solid #eef2f6 !important;
+        transition: background .2s ease;
+    }
+
+    .notification-item:last-child {
+        border-bottom: 0 !important;
+    }
+
+    .notification-item:hover {
+        background: #f8fbfa !important;
+    }
+
+    .notification-item-content {
+        min-width: 0;
+        gap: 15px !important;
+        align-items: flex-start !important;
+    }
+
+    .notification-item-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 13px;
+    }
+
+    .notification-item-icon.warning {
+        color: #b45309;
+        background: #fffbeb;
+    }
+
+    .notification-item-icon svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .notification-item-copy {
+        min-width: 0;
+    }
+
+    .notification-item-title {
+        margin: 0 0 5px !important;
+        color: #1e293b !important;
+        font-size: 15px !important;
+        font-weight: 700 !important;
+        line-height: 1.5;
+    }
+
+    .notification-item-message {
+        margin: 0 0 9px !important;
+        color: #64748b !important;
+        font-size: 13px !important;
+        line-height: 1.65 !important;
+        overflow-wrap: anywhere;
+    }
+
+    .notification-item-meta {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 9px;
+        color: #94a3b8;
+        font-size: 12px;
+    }
+
+    .notification-time {
+        color: #94a3b8;
+        white-space: nowrap;
+    }
+
+    .notification-tag {
+        display: inline-flex;
+        padding: 4px 9px;
+        border-radius: 999px;
+        color: #047857;
+        background: #ecfdf5;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .notification-tag.warning {
+        color: #b45309;
+        background: #fffbeb;
+    }
+
+    .notification-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        margin-top: 11px;
+        padding: 8px 12px;
+        border: 1px solid #a7f3d0;
+        border-radius: 9px;
+        color: #047857;
+        background: #f0fdf7;
+        font-size: 12px;
+        font-weight: 700;
+        text-decoration: none;
+        transition: background .2s ease, border-color .2s ease;
+    }
+
+    .notification-action:hover {
+        border-color: #6ee7b7;
+        background: #d1fae5;
+    }
+
+    .notification-done {
+        flex: 0 0 auto;
+        padding: 8px 13px !important;
+        border-color: #dbe5e1 !important;
+        border-radius: 9px !important;
+        color: #475569 !important;
+        transition: all .2s ease;
+    }
+
+    .notification-done-form {
+        margin: 0 0 0 16px !important;
+    }
+
+    .notification-done:hover {
+        border-color: #10b981 !important;
+        color: #047857 !important;
+        background: #ecfdf5 !important;
+    }
+
+    .notification-empty {
+        padding: 60px 24px !important;
+    }
+
+    .notification-empty-icon {
+        width: 60px;
+        height: 60px;
+        margin: 0 auto 15px;
+        border-radius: 18px;
+    }
+
+    .notification-empty-icon svg {
+        width: 28px;
+        height: 28px;
+    }
+
+    @media (max-width: 640px) {
+        .notification-page {
+            margin: 24px auto !important;
+            padding: 0 16px !important;
+        }
+
+        .notification-header {
+            align-items: flex-start !important;
+            padding: 20px !important;
+        }
+
+        .notification-heading {
+            align-items: flex-start;
+            gap: 13px;
+        }
+
+        .notification-heading-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 13px;
+        }
+
+        .notification-title {
+            font-size: 21px !important;
+        }
+
+        .notification-item {
+            align-items: flex-start !important;
+            padding: 17px !important;
+        }
+
+        .notification-item-content {
+            gap: 11px !important;
+        }
+
+        .notification-item-icon {
+            width: 36px;
+            height: 36px;
+        }
+
+        .notification-done {
+            padding: 7px 9px !important;
+            font-size: 11px !important;
+        }
+
+        .notification-done-form {
+            flex: 1 1 100%;
+            margin: 0 !important;
+            display: flex;
+            justify-content: flex-end;
+        }
+    }
+</style>
+
+<div class="notification-page" style="
+    max-width: 1080px;
+    width: 100%;
     margin: 30px auto;
     padding: 0 20px;
+    box-sizing: border-box;
     font-family: inherit;
 ">
 
     {{-- =========================================================
         TOMBOL KEMBALI
     ========================================================== --}}
-    <div style="margin-bottom: 16px;">
+    <div class="notification-back" style="margin-bottom: 16px;">
 
         <a
-            href="{{ route('dashboard') }}"
+            href="{{ $isAdmin ? route('admin.dashboard') : route('dashboard') }}"
             style="
                 display: inline-flex;
                 align-items: center;
@@ -25,7 +323,7 @@
                 font-weight: 500;
             "
         >
-            ← Kembali ke Dashboard
+            ← Kembali ke {{ $isAdmin ? 'Dashboard Super Admin' : 'Dashboard' }}
         </a>
 
     </div>
@@ -34,7 +332,7 @@
     {{-- =========================================================
         HEADER
     ========================================================== --}}
-    <div style="
+    <div class="notification-header" style="
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -43,32 +341,42 @@
         gap: 12px;
     ">
 
-        <div>
+        <div class="notification-heading">
+            <div class="notification-heading-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+                    <path d="M10 21h4" />
+                </svg>
+            </div>
+            <div>
 
             <h2 style="
                 font-size: 24px;
                 font-weight: 700;
                 color: #1f2937;
                 margin: 0 0 6px 0;
-            ">
-                Pemberitahuan
+            " class="notification-title">
+                Notifikasi
             </h2>
 
-            <p style="
+            <p class="notification-subtitle" style="
                 color: #6b7280;
                 font-size: 14px;
                 margin: 0;
             ">
-                Riwayat status pengisian daya dan notifikasi akun Anda
+                {{ $isAdmin
+                    ? 'Ringkasan aktivitas charging dan kondisi operasional stasiun.'
+                    : 'Riwayat status pengisian daya dan notifikasi akun Anda' }}
             </p>
 
+            </div>
         </div>
 
 
         {{-- =====================================================
             TANDAI SEMUA DIBACA
         ====================================================== --}}
-        @if($unreadCount > 0)
+        @if(!$isAdmin && $unreadCount > 0)
 
             <form
                 action="{{ route('notifications.markAllAsRead') }}"
@@ -81,7 +389,7 @@
 
                 <button
                     type="submit"
-                    style="
+                    class="notification-mark-all" style="
                         background-color: transparent;
                         border: 1.5px solid #10b981;
                         color: #059669;
@@ -107,7 +415,7 @@
     ========================================================== --}}
     @if(session('success'))
 
-        <div style="
+        <div class="notification-flash" style="
             background-color: #ecfdf5;
             border: 1px solid #a7f3d0;
             color: #065f46;
@@ -125,7 +433,7 @@
     {{-- =========================================================
         CONTAINER NOTIFIKASI
     ========================================================== --}}
-    <div style="
+    <div class="notification-card" style="
         background-color: #ffffff;
         border-radius: 20px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
@@ -157,7 +465,7 @@
                 */
 
                 $title = $data['title']
-                    ?? 'Pemberitahuan';
+                    ?? 'Notifikasi';
 
                 $message = $data['message']
                     ?? '';
@@ -296,13 +604,25 @@
                     }
                 }
 
+                $notificationUrl = $data['action_url'] ?? $notificationUrl;
+                $actionLabel = $data['action_label'] ?? null;
+                $recommendationType = $data['recommendation_type'] ?? null;
+
+            @endphp
+
+            @php
+                $isOperationalWarning = $isAdmin && (
+                    str_contains(strtolower($title), 'perlu diperiksa')
+                    || str_contains(strtolower($title), 'berubah')
+                );
+                $isLowBalanceRecommendation = $recommendationType === 'low_balance';
             @endphp
 
 
             {{-- =================================================
                 SATU ITEM NOTIFIKASI
             ================================================== --}}
-            <div style="
+            <div class="notification-item" style="
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
@@ -316,7 +636,7 @@
                 {{-- =============================================
                     BAGIAN KIRI
                 ============================================== --}}
-                <div style="
+                <div class="notification-item-content" style="
                     display: flex;
                     align-items: flex-start;
                     gap: 16px;
@@ -324,24 +644,40 @@
                 ">
 
 
-                    {{-- TITIK STATUS --}}
-                    <span style="
-                        display: inline-block;
-                        width: 10px;
-                        height: 10px;
-                        margin-top: 6px;
-                        border-radius: 50%;
-                        background-color:
-                            {{ $isUnread ? '#10b981' : '#d1d5db' }};
-                        flex-shrink: 0;
-                    ">
-                    </span>
+                    <div class="notification-item-icon {{ $isOperationalWarning || $isLowBalanceRecommendation ? 'warning' : '' }}" aria-hidden="true">
+                        @if($isOperationalWarning)
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 3 2.8 19a1.4 1.4 0 0 0 1.2 2h16a1.4 1.4 0 0 0 1.2-2L12 3Z" />
+                                <path d="M12 9v4m0 4h.01" />
+                            </svg>
+                        @elseif($recommendationType === 'low_balance')
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="6" width="18" height="14" rx="2" />
+                                <path d="M3 10h18m-5 5h2" />
+                                <path d="M7 3v3" />
+                            </svg>
+                        @elseif($recommendationType === 'points')
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z" />
+                            </svg>
+                        @elseif($recommendationType === 'stations')
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" />
+                                <circle cx="12" cy="10" r="2.5" />
+                            </svg>
+                        @else
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 7h18v13H3zM7 7V4h10v3m-8 5h6" />
+                                <path d="m9 16 2 2 4-4" />
+                            </svg>
+                        @endif
+                    </div>
 
 
                     {{-- =========================================
                         ISI NOTIFIKASI
                     ========================================== --}}
-                    <div style="flex: 1;">
+                    <div class="notification-item-copy" style="flex: 1;">
 
 
                         @if($notificationUrl)
@@ -351,7 +687,7 @@
                             ================================== --}}
                             <a
                                 href="{{ $notificationUrl }}"
-                                style="
+                                class="notification-item-link" style="
                                     text-decoration: none;
                                     color: inherit;
                                     display: block;
@@ -359,7 +695,7 @@
                             >
 
                                 {{-- JUDUL --}}
-                                <h4 style="
+                                <h4 class="notification-item-title" style="
                                     font-size: 16px;
                                     font-weight:
                                         {{ $isUnread ? '700' : '500' }};
@@ -372,7 +708,7 @@
 
 
                                 {{-- PESAN --}}
-                                <p style="
+                                <p class="notification-item-message" style="
                                     font-size: 14px;
                                     color: #4b5563;
                                     margin: 0 0 8px 0;
@@ -390,7 +726,7 @@
                                 NOTIFIKASI TANPA LINK
                             ================================== --}}
 
-                            <h4 style="
+                            <h4 class="notification-item-title" style="
                                 font-size: 16px;
                                 font-weight:
                                     {{ $isUnread ? '700' : '500' }};
@@ -402,7 +738,7 @@
                             </h4>
 
 
-                            <p style="
+                            <p class="notification-item-message" style="
                                 font-size: 14px;
                                 color: #4b5563;
                                 margin: 0 0 8px 0;
@@ -417,18 +753,39 @@
                         {{-- =====================================
                             WAKTU NOTIFIKASI
                         ====================================== --}}
-                        <span style="
-                            font-size: 12px;
-                            color: #9ca3af;
-                        ">
+                        <div class="notification-item-meta">
+                        @if($isAdmin)
+                            <span class="notification-tag {{ $isOperationalWarning ? 'warning' : '' }}">
+                                {{ $isOperationalWarning ? 'Perlu perhatian' : 'Aktivitas operasional' }}
+                            </span>
+                        @elseif($recommendationType)
+                            <span class="notification-tag {{ $isLowBalanceRecommendation ? 'warning' : '' }}">
+                                {{ $isLowBalanceRecommendation ? 'Saldo perlu diisi' : 'Rekomendasi untuk Anda' }}
+                            </span>
+                        @elseif($isUnread)
+                            <span class="notification-tag">Belum dibaca</span>
+                        @endif
+                                        @php
+                                            $notificationCreatedAt = $notif->created_at;
+                                            $notificationTime = $notificationCreatedAt?->timezone('Asia/Jakarta');
+                                        @endphp
+                                        <time
+                                            class="notification-time"
+                                            @if($notificationCreatedAt)
+                                                datetime="{{ $notificationCreatedAt->toIso8601String() }}"
+                                                title="{{ $notificationTime->format('d M Y, H:i:s') }}"
+                                                data-notification-time
+                                            @endif
+                                        >
+                                            {{ $notificationTime?->format('d M Y, H:i:s') ?? 'Baru saja' }}
+                                        </time>
+                                        </div>
 
-                            {{
-                                $notif->created_at
-                                    ? $notif->created_at->diffForHumans()
-                                    : 'Baru saja'
-                            }}
-
-                        </span>
+                        @if($actionLabel && $notificationUrl)
+                            <a class="notification-action" href="{{ $notificationUrl }}">
+                                {{ $actionLabel }} <span aria-hidden="true">→</span>
+                            </a>
+                        @endif
 
 
                         {{-- =====================================
@@ -482,7 +839,7 @@
                 {{-- =============================================
                     TOMBOL SELESAI / TANDAI DIBACA
                 ============================================== --}}
-                @if($isUnread)
+                @if(!$isAdmin && $isUnread && $notif->id)
 
                     <form
                         action="{{ route(
@@ -490,7 +847,7 @@
                             $notif->id
                         ) }}"
                         method="POST"
-                        style="
+                        class="notification-done-form" style="
                             margin: 0;
                             margin-left: 16px;
                         "
@@ -502,7 +859,7 @@
 
                         <button
                             type="submit"
-                            style="
+                            class="notification-done" style="
                                 background-color: #ffffff;
                                 border: 1px solid #e5e7eb;
                                 color: #4b5563;
@@ -531,17 +888,25 @@
             {{-- =================================================
                 BELUM ADA NOTIFIKASI
             ================================================== --}}
-            <div style="
+            <div class="notification-empty" style="
                 text-align: center;
                 padding: 50px 20px;
                 color: #9ca3af;
             ">
 
+                <div class="notification-empty-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+                        <path d="M10 21h4" />
+                    </svg>
+                </div>
                 <p style="
                     margin: 0;
                     font-size: 15px;
                 ">
-                    Belum ada pemberitahuan untuk Anda.
+                    {{ $isAdmin
+                        ? 'Belum ada aktivitas operasional atau charger yang memerlukan perhatian.'
+                        : 'Belum ada pemberitahuan untuk Anda.' }}
                 </p>
 
             </div>
@@ -552,5 +917,51 @@
     </div>
 
 </div>
+
+<script>
+    (() => {
+        const formatRelativeTime = (timestamp) => {
+            const seconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
+
+            if (seconds < 45) return 'Baru saja';
+            if (seconds < 90) return '1 menit yang lalu';
+
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 45) return `${minutes} menit yang lalu`;
+            if (minutes < 90) return '1 jam yang lalu';
+
+            const hours = Math.floor(minutes / 60);
+            if (hours < 22) return `${hours} jam yang lalu`;
+            if (hours < 36) return 'Kemarin';
+
+            const days = Math.floor(hours / 24);
+            if (days < 7) return `${days} hari yang lalu`;
+
+            return null;
+        };
+
+        const updateNotificationTimes = () => {
+            document.querySelectorAll('[data-notification-time]').forEach((element) => {
+                const timestamp = Date.parse(element.dateTime);
+                if (Number.isNaN(timestamp)) return;
+
+                const relativeTime = formatRelativeTime(timestamp);
+                if (relativeTime) {
+                    element.textContent = relativeTime;
+                    return;
+                }
+
+                element.textContent = new Intl.DateTimeFormat('id-ID', {
+                    dateStyle: 'medium',
+                    timeStyle: 'short',
+                    timeZone: 'Asia/Jakarta',
+                }).format(timestamp);
+            });
+        };
+
+        updateNotificationTimes();
+        window.setInterval(updateNotificationTimes, 30000);
+    })();
+</script>
 
 @endsection

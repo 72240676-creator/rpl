@@ -21,7 +21,7 @@
     @endif
 
     <div style="background: #ffffff; padding: 30px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
-        <form action="{{ route('admin.stations.update', $station->id_location) }}" method="POST">
+        <form action="{{ route('operator.stations.update', $station->id_location) }}" method="POST">
             @csrf
             @method('PUT')
 
@@ -67,7 +67,7 @@
             </div>
 
             <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                <a href="{{ route('admin.stations.index') }}" style="background: #64748b; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 14px; text-decoration: none; cursor: pointer;">Batal</a>
+                <a href="{{ route('operator.stations.index') }}" style="background: #64748b; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 14px; text-decoration: none; cursor: pointer;">Batal</a>
                 <button type="submit" style="background: #059669; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer;">Simpan Perubahan</button>
             </div>
         </form>

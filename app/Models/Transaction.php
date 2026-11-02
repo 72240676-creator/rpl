@@ -23,7 +23,7 @@ class Transaction extends Model
     ];
 
     protected $casts = [
-        'amount'  => 'decimal:2',
+        'amount' => 'decimal:2',
         'paid_at' => 'datetime',
     ];
 
@@ -34,6 +34,10 @@ class Transaction extends Model
 
     public function chargingSession()
     {
-        return $this->belongsTo(ChargingSession::class, 'session_id', 'id');
+        return $this->belongsTo(
+            ChargingSession::class,
+            'session_id',
+            'id'
+        );
     }
 }

@@ -35,7 +35,11 @@ class AuthController extends Controller
             }
 
             if (Auth::user()->peran === 'admin') {
-                return redirect()->route('admin.stations.index');
+                return redirect()->route('admin.dashboard');
+            }
+
+            if (Auth::user()->peran === 'operator') {
+                return redirect()->route('operator.dashboard');
             }
 
             return redirect()->intended('/dashboard');

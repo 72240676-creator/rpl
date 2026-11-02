@@ -154,17 +154,14 @@ class ChargingSessionController extends Controller
              * NOTIFIKASI CHARGING SELESAI
              */
             if ($session->user) {
-                try {
-                    $session->user->notify(
-                        new ChargingFinishedNotification(
-                            'charging_finished',
-                            $session
-                        )
-                    );
-                } catch (\Exception $e) {
-                    report($e);
-                }
-            }
+            try {
+                $session->user->notify(
+                new ChargingFinishedNotification($session)
+        );
+    } catch (\Exception $e) {
+        report($e);
+    }
+}
         }
 
         /*
@@ -332,10 +329,7 @@ class ChargingSessionController extends Controller
             if ($session->user) {
                 try {
                     $session->user->notify(
-                        new ChargingFinishedNotification(
-                            'payment_success',
-                            $transaction
-                        )
+                        new ChargingFinishedNotification($session)
                     );
                 } catch (\Exception $e) {
                     report($e);
@@ -373,7 +367,12 @@ class ChargingSessionController extends Controller
         $user = Auth::user();
         $userId = $user->id_user ?? $user->id;
 
-        $histories = ChargingSession::where('user_id', $userId)
+        $histories = ChargingSession::with([
+                'charger.location',
+                'vehicle',
+                'transactions' => fn ($query) => $query->where('status', 'success')->latest('paid_at'),
+            ])
+            ->where('user_id', $userId)
             ->whereIn('status', ['completed', 'paid'])
             ->orderBy('end_time', 'desc')
             ->get();

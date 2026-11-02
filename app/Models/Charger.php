@@ -14,21 +14,30 @@ class Charger extends Model
 
     // Primary key tabel chargers adalah id_charger
     protected $primaryKey = 'id_charger';
+    public $incrementing = true;
+    protected $keyType = 'int';
 
     protected $fillable = [
-        'id_location',
+        'id_charger',
+        'id_location', // Sesuaikan dengan kolom migrasi chargers
         'device_number',
         'connector_type',
         'max_power_kw',
         'price_per_kwh',
         'is_online',
         'status',
+        'needs_inspection',
+        'inspection_note',
+        'inspection_reported_at',
+        'inspection_reported_by',
     ];
 
     protected $casts = [
         'max_power_kw' => 'decimal:2',
         'price_per_kwh' => 'decimal:2',
         'is_online' => 'boolean',
+        'needs_inspection' => 'boolean',
+        'inspection_reported_at' => 'datetime',
     ];
 
     public function location(): BelongsTo
@@ -38,5 +47,10 @@ class Charger extends Model
             'id_location',
             'id_location'
         );
+    }
+
+    public function inspectionReporter(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'inspection_reported_by', 'id_user');
     }
 }

@@ -29,4 +29,26 @@ class WalletController extends Controller
 
         return redirect()->route('dashboard')->with('success', 'Top Up sebesar Rp' . number_format($request->nominal, 0, ',', '.') . ' menggunakan ' . strtoupper($request->metode_pembayaran) . ' berhasil!');
     }
+    public function processTopUp(Request $request)
+    {
+        // Validasi nominal input (minimal 10.000)
+        $request->validate([
+            'amount' => 'required|numeric|min:10000',
+            'payment_method' => 'required',
+        ], [
+            'amount.min' => 'Nominal top up minimal adalah Rp 10.000.',
+            'amount.required' => 'Silakan masukkan atau pilih nominal top up.',
+        ]);
+
+        $user = Auth::user();
+
+        // Tambahkan nominal yang diketik ke saldo user
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        $user->saldo += $request->nominal;
+        $user->save();
+
+        return redirect()->back()->with('success', 'Top up sebesar Rp ' . number_format($request->amount, 0, ',', '.') . ' berhasil!');
+    }
 }
