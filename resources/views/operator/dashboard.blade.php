@@ -52,10 +52,11 @@
     .status-badge.busy { color: #1d4ed8; background: #dbeafe; }
     .status-badge.offline { color: #b91c1c; background: #fee2e2; }
     .status-badge.warning { color: #b45309; background: #fef3c7; }
-    .tariff-form { display: flex; align-items: center; gap: 6px; min-width: 150px; }
-    .tariff-form input { width: 95px; min-width: 0; padding: 7px 8px; color: #1e293b; border: 1px solid #cbd5e1; border-radius: 8px; font: inherit; }
-    .tariff-form button { padding: 7px 9px; color: #fff; background: #059669; border: 0; border-radius: 8px; font: inherit; font-weight: 700; cursor: pointer; }
-    .tariff-form button:hover { background: #047857; }
+    .tariff-display { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 190px; }
+    .tariff-amount { color: #0f172a; font-size: 12px; font-weight: 700; white-space: nowrap; }
+    .tariff-edit { flex: 0 0 auto; padding: 7px 9px; color: #047857; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; font-size: 11px; font-weight: 700; text-decoration: none; white-space: nowrap; }
+    .tariff-edit:hover { background: #d1fae5; }
+    .tariff-edit:focus-visible { outline: 3px solid rgba(16, 185, 129, .3); outline-offset: 2px; }
     .recent-list { padding: 4px 20px 10px; }
     .recent-item { display: flex; align-items: flex-start; gap: 12px; padding: 14px 0; border-bottom: 1px solid #f1f5f9; }
     .recent-item:last-child { border-bottom: 0; }
@@ -187,12 +188,14 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <form class="tariff-form" action="{{ route('operator.chargers.tariff.update', $charger->id_charger) }}" method="POST">
-                                        @csrf
-                                        @method('PUT')
-                                        <input aria-label="Tarif per kWh {{ $charger->device_number }}" type="number" name="price_per_kwh" min="1" max="99999999.99" step="1" value="{{ (float) $charger->price_per_kwh }}" required>
-                                        <button type="submit">Simpan</button>
-                                    </form>
+                                    <div class="tariff-display">
+                                        <span class="tariff-amount">Rp{{ number_format($charger->price_per_kwh, 0, ',', '.') }}/kWh</span>
+                                        <a
+                                            class="tariff-edit"
+                                            href="{{ route('operator.chargers.tariff.edit', $charger->id_charger) }}"
+                                            aria-label="Ubah tarif charger {{ $charger->device_number }}"
+                                        >Ubah tarif</a>
+                                    </div>
                                     <details class="inspection-controls" data-inspection-controls="{{ $charger->id_charger }}">
                                         <summary data-inspection-summary>{{ $charger->needs_inspection ? 'Perbarui catatan pemeriksaan' : 'Laporkan perlu pemeriksaan' }}</summary>
                                         <form class="inspection-form" action="{{ route('operator.chargers.inspection.update', $charger->id_charger) }}" method="POST">
