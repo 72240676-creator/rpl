@@ -11,6 +11,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ChargingController;
 use App\Http\Controllers\StationController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\ReportController;
 
 use App\Http\Middleware\AdminMiddleware;
 use App\Models\Location;
@@ -259,9 +260,9 @@ Route::middleware('auth')->group(function () {
     )->name('charging.invoice.pdf');
 
 
-    // ========================================================
+    // ============================================================
     // ADMIN
-    // ========================================================
+    // ============================================================
 
     Route::middleware([
         AdminMiddleware::class
@@ -314,6 +315,16 @@ Route::middleware('auth')->group(function () {
                 '/chargers/{id_charger}',
                 [StationController::class, 'destroyCharger']
             )->name('chargers.destroy');
+
+
+            // --------------------------------------------------
+            // Laporan Transaksi & Pendapatan
+            // --------------------------------------------------
+
+            Route::get(
+                '/reports',
+                [ReportController::class, 'index']
+            )->name('reports.index');
 
         });
 });
