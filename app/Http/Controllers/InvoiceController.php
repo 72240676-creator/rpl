@@ -33,6 +33,8 @@ class InvoiceController extends Controller
             ->where('status', 'success')
             ->firstOrFail();
 
+        $session->loadMissing(['user', 'vehicle', 'charger.location']);
+
         // Mengambil data charger
         $charger = $session->charger;
 
@@ -70,6 +72,8 @@ class InvoiceController extends Controller
         )
             ->where('status', 'success')
             ->firstOrFail();
+
+        $session->loadMissing(['user', 'vehicle', 'charger.location']);
 
         // Mengambil data charger
         $charger = $session->charger;

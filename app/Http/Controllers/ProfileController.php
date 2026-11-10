@@ -60,4 +60,19 @@ class ProfileController extends Controller
 
         return back()->with('success', 'Informasi profil berhasil diperbarui!');
     }
+
+    /**
+     * Simulasi berkendara: mengurangi daya baterai mobil ke 20% (untuk kebutuhan demo / pengujian).
+     */
+    public function discharge(Vehicle $vehicle)
+    {
+        $userId = Auth::user()->id_user ?? Auth::id();
+        if ($vehicle->id_user != $userId) {
+            abort(403);
+        }
+
+        $vehicle->update(['current_battery_soc' => 20]);
+
+        return back()->with('success', 'Simulasi berkendara berhasil! Baterai mobil kini tersisa 20% (siap untuk pengisian ulang).');
+    }
 }

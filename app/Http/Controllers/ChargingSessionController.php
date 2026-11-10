@@ -60,11 +60,20 @@ class ChargingSessionController extends Controller
             );
         }
 
+        $startSoc = (int) ($vehicle->current_battery_soc ?? 25);
+        if ($startSoc >= 100) {
+            // Jika mobil sudah 100% penuh dari sesi lalu, simulasikan mobil telah dipakai berkendara (sisa 28%)
+            $startSoc = 28;
+            $vehicle->update(['current_battery_soc' => 28]);
+        }
+
         // Buat charging session
         $session = ChargingSession::create([
             'user_id' => $userId,
             'charger_id' => $charger->id_charger ?? $charger->id,
             'vehicle_id' => $vehicle->id_vehicle ?? $vehicle->id,
+            'start_battery_soc' => $startSoc,
+            'end_battery_soc' => null,
             'start_time' => now(),
             'end_time' => null,
             'energy_consumed_kwh' => 0,
@@ -88,11 +97,13 @@ class ChargingSessionController extends Controller
             abort(403);
         }
 
-        $charger = Charger::where('id_charger', $session->charger_id)->first() ?? $session->charger;
+        $session->loadMissing(['charger.location', 'vehicle', 'user']);
+        $charger = $session->charger ?? Charger::where('id_charger', $session->charger_id)->first();
+        $vehicle = $session->vehicle ?? ($user ? $user->vehicles()->first() : null);
 
         return view(
             'chargingsession',
-            compact('session', 'charger')
+            compact('session', 'charger', 'vehicle')
         );
     }
 
@@ -122,24 +133,51 @@ class ChargingSessionController extends Controller
 
             $charger = Charger::where('id_charger', $session->charger_id)->first() ?? $session->charger;
 
-            // Hitung energi
-            $energyConsumed = $durationHours * (float) ($charger->max_power_kw ?? 0);
+            // Hitung energi (dukung input dari telemetri real-time jika ada)
+            if ($request->filled('energy_consumed_kwh') && (float) $request->energy_consumed_kwh > 0) {
+                $energyConsumed = (float) $request->energy_consumed_kwh;
+            } else {
+                $energyConsumed = $durationHours * (float) ($charger->max_power_kw ?? 0);
+            }
 
             // Hitung biaya
-            $totalCost = $energyConsumed * (float) ($charger->price_per_kwh ?? 0);
+            if ($request->filled('total_cost') && (float) $request->total_cost > 0) {
+                $totalCost = round((float) $request->total_cost);
+            } else {
+                $totalCost = round($energyConsumed * (float) ($charger->price_per_kwh ?? 0));
+            }
 
             $energyConsumed = round(max(0.01, $energyConsumed), 3);
             $totalCost = round(max(0, $totalCost));
+
+            // Hitung persentase baterai akhir
+            $batteryCapacity = (float) ($session->vehicle->battery_capacity_kwh ?? 60.0);
+            if ($request->filled('end_battery_soc') && (int) $request->end_battery_soc > 0) {
+                $finalSoc = min(100, (int) $request->end_battery_soc);
+            } else {
+                $startSoc = (int) ($session->start_battery_soc ?? 25);
+                $finalSoc = min(100, round($startSoc + (($energyConsumed / max(1, $batteryCapacity)) * 100)));
+            }
 
             /*
              * Simpan hasil charging.
              */
             $session->update([
                 'end_time' => $endTime,
+                'end_battery_soc' => $finalSoc,
                 'energy_consumed_kwh' => $energyConsumed,
                 'total_cost' => $totalCost,
                 'status' => 'completed',
             ]);
+
+            /*
+             * Update status baterai pada mobil secara persisten
+             */
+            if ($session->vehicle) {
+                $session->vehicle->update([
+                    'current_battery_soc' => $finalSoc,
+                ]);
+            }
 
             /*
              * Charger tersedia kembali.

@@ -5,7 +5,7 @@
 @section('content')
 <div class="profile-wrapper" style="display: flex; flex-direction: column; gap: 20px; width: 100%; max-width: 800px; margin: 0 auto; padding: 20px;">
     
-    <a href="/dashboard" style="color: #64748b; text-decoration: none; font-weight: 600; font-size: 14px;">← Kembali ke Dashboard</a>
+    <x-back-link href="{{ route('dashboard') }}" />
 
     @if(session('success'))
         <div style="background: #d1fae5; color: #065f46; padding: 15px; border-radius: 8px; font-size: 14px; border: 1px solid #a7f3d0;">{{ session('success') }}</div>

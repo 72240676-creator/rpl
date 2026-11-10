@@ -85,23 +85,11 @@ Route::middleware('auth')->group(function () {
     // ========================================================
     // E-POIN / REWARD
     // ========================================================
-    Route::get('/points', function () {
-        return view('points.index'); // Atau panggil PointController jika ada
-    })->name('points.index');
+    Route::get('/points', [PointController::class, 'index'])->name('points.index');
+    Route::get('/tukar-poin', [PointController::class, 'index'])->name('poin.index');
+    Route::post('/points/redeem', [PointController::class, 'redeem'])->name('points.redeem');
+    Route::post('/tukar-poin', [PointController::class, 'redeem'])->name('poin.redeem');
 
-
-        Route::middleware(['auth'])->group(function () {
-        
-        // Route Halaman Utama & Fitur Penukaran Poin
-        Route::get('/points', [PointController::class, 'index'])->name('points.index');
-        Route::get('/tukar-poin', [PointController::class, 'index'])->name('poin.index'); // Alias jika dipanggil poin.index
-
-        // Route Proses Penukaran Poin (Redeem)
-        Route::post('/points/redeem', [PointController::class, 'redeem'])->name('points.redeem');
-        Route::post('/tukar-poin', [PointController::class, 'redeem'])->name('poin.redeem'); // Alias jika dipanggil poin.redeem
-
-    });
-    
     // ========================================================
     // PROFILE & KENDARAAN
     // ========================================================
@@ -109,6 +97,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'index']);
     Route::post('/profile/vehicle', [ProfileController::class, 'storeVehicle']);
     Route::put('/profile/update', [ProfileController::class, 'updateProfile'])->name('profile.update');
+    Route::post('/vehicles/{vehicle}/discharge', [ProfileController::class, 'discharge'])->name('vehicles.discharge');
 
 
     // ========================================================
@@ -125,6 +114,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('operator')->prefix('operator')->name('operator.')->group(function () {
         Route::get('/dashboard', [OperatorDashboardController::class, 'index'])->name('dashboard');
         Route::get('/dashboard/live', [OperatorDashboardController::class, 'live'])->name('dashboard.live');
+        Route::get('/activity', [OperatorDashboardController::class, 'activity'])->name('activity');
         Route::put('/chargers/{id_charger}/inspection', [OperatorDashboardController::class, 'updateInspection'])->name('chargers.inspection.update');
         Route::get('/stations', [StationController::class, 'index'])->name('stations.index');
         Route::post('/stations', [StationController::class, 'store'])->name('stations.store');

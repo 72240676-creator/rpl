@@ -96,8 +96,8 @@ class StationController extends Controller
         $charger->update(['price_per_kwh' => $validated['price_per_kwh']]);
 
         return redirect()
-        ->route('operator.dashboard')
-        ->with('success', "Tarif charger {$charger->device_number} berhasil diperbarui.");
+            ->route('operator.stations.index')
+            ->with('success', "Tarif charger {$charger->device_number} berhasil diperbarui.");
     }
 
     public function destroyCharger(int $id_charger)

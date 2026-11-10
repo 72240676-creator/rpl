@@ -87,4 +87,65 @@ class ChargingHistoryTest extends TestCase
             ->assertSee('INV-TEST-001')
             ->assertSee('Lihat invoice');
     }
+
+    public function test_invoice_pdf_downloads_successfully(): void
+    {
+        $user = User::create([
+            'nama' => 'Pengemudi Test',
+            'email' => 'driver2@example.com',
+            'password' => Hash::make('password123'),
+            'peran' => 'pengemudi',
+            'status_akun' => 'aktif',
+        ]);
+        $location = Location::create([
+            'nama_lokasi' => 'SPKLU Sudirman',
+            'alamat' => 'Jl. Sudirman',
+            'latitude' => -6.2,
+            'longitude' => 106.8,
+            'jam_operasional' => '24 Jam',
+            'status' => 'aktif',
+        ]);
+        $charger = Charger::create([
+            'id_location' => $location->id_location,
+            'device_number' => 'CH-001',
+            'connector_type' => 'CCS2',
+            'max_power_kw' => 50,
+            'price_per_kwh' => 2500,
+            'status' => 'tersedia',
+        ]);
+        $vehicle = Vehicle::create([
+            'id_user' => $user->id_user,
+            'merek' => 'Hyundai',
+            'model' => 'Ioniq 5',
+            'nomor_polisi' => 'B 1234 EV',
+            'tipe_konektor' => 'CCS2',
+            'current_battery_soc' => 80,
+        ]);
+        $session = ChargingSession::create([
+            'user_id' => $user->id_user,
+            'charger_id' => $charger->id_charger,
+            'vehicle_id' => $vehicle->id_vehicle,
+            'start_time' => Carbon::parse('2026-10-28 07:00:00'),
+            'end_time' => Carbon::parse('2026-10-28 07:30:00'),
+            'energy_consumed_kwh' => 1.25,
+            'total_cost' => 3125,
+            'status' => 'paid',
+            'start_battery_soc' => 50,
+            'end_battery_soc' => 80,
+        ]);
+        Transaction::create([
+            'session_id' => $session->id,
+            'invoice_number' => 'INV-TEST-002',
+            'payment_method' => 'e-wallet',
+            'amount' => 3125,
+            'type' => 'payment',
+            'status' => 'success',
+            'paid_at' => Carbon::parse('2026-10-28 07:31:00'),
+        ]);
+
+        $response = $this->actingAs($user)->get("/charging/{$session->id}/invoice/pdf");
+
+        $response->assertOk();
+        $this->assertStringContainsString('application/pdf', $response->headers->get('content-type'));
+    }
 }

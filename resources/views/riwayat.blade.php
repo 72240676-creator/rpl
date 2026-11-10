@@ -14,21 +14,6 @@
             font-family: Inter, Arial, sans-serif;
         }
         .container { max-width: 900px; margin: 0 auto; }
-        .back {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 24px;
-            padding: 10px 15px;
-            color: #fff;
-            background: #1e293b;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: background .2s, transform .2s;
-        }
-        .back:hover { background: #334155; transform: translateY(-1px); }
         .history-heading { display: flex; justify-content: space-between; align-items: flex-end; gap: 18px; margin-bottom: 26px; }
         .page-heading { margin: 0 0 8px; font-size: clamp(25px, 4vw, 32px); }
         .intro { margin: 0; color: #64748b; line-height: 1.6; }
@@ -135,7 +120,9 @@
 </head>
 <body>
 <main class="container">
-    <a href="{{ route('dashboard') }}" class="back">← Kembali ke Dashboard</a>
+    <div style="margin-bottom: 24px;">
+        <x-back-link href="{{ route('dashboard') }}" />
+    </div>
 
     <header class="history-heading">
         <div>

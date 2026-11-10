@@ -30,16 +30,7 @@
 
     <div style="margin-bottom: 25px;">
 
-        <a
-            href="{{ url()->previous() }}"
-            style="
-                text-decoration: none;
-                color: #3b82f6;
-                font-weight: 600;
-            "
-        >
-            ← Kembali
-        </a>
+        <x-back-link href="{{ url()->previous() }}" label="Kembali" />
 
         <h2 style="
             margin: 15px 0 8px 0;
@@ -261,7 +252,7 @@
                     type="submit"
                     style="
                         flex: 1;
-                        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+                        background: linear-gradient(135deg, #10b981, #059669);
                         color: #ffffff;
                         border: none;
                         padding: 16px;
@@ -269,30 +260,12 @@
                         font-size: 16px;
                         font-weight: 700;
                         cursor: pointer;
-                        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+                        box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
                         transition: transform 0.1s ease;
                     "
                 >
                     ⚡ Mulai Pengisian Daya
                 </button>
-
-                @if (Route::has('scan.charge'))
-                    <a
-                        href="{{ route('scan.charge') }}"
-                        style="
-                            background: #f1f5f9;
-                            color: #475569;
-                            padding: 16px 20px;
-                            border-radius: 14px;
-                            text-decoration: none;
-                            font-weight: 600;
-                            font-size: 14px;
-                            white-space: nowrap;
-                        "
-                    >
-                        ← Scan Lagi
-                    </a>
-                @endif
 
             </div>
 

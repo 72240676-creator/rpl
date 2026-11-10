@@ -20,14 +20,6 @@
         box-shadow: 0 8px 25px rgba(15, 23, 42, .05);
     }
 
-    .tariff-back {
-        display: inline-block;
-        margin-bottom: 20px;
-        color: #047857;
-        text-decoration: none;
-        font-weight: 700;
-    }
-
     .tariff-subtitle {
         color: #64748b;
         margin-top: 7px;
@@ -132,10 +124,9 @@
 
 <div class="tariff-page">
 
-    <a class="tariff-back"
-       href="{{ route('operator.dashboard') }}">
-        ← Kembali ke Dashboard
-    </a>
+    <div style="margin-bottom: 20px;">
+        <x-back-link href="{{ route('operator.dashboard') }}" />
+    </div>
 
     <div class="tariff-card">
 

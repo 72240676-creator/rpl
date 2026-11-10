@@ -10,12 +10,15 @@ class LocationController extends Controller
     // Menampilkan daftar lokasi di sisi pengemudi / pencarian (FR-02)
     public function index(Request $request)
     {
-        $query = Location::query();
+        $query = Location::with('chargers');
 
-        // Fitur Filter berdasarkan status atau pencarian nama
-        if ($request->has('search') && $request->search != '') {
-            $query->where('nama_lokasi', 'like', '%' . $request->search . '%')
-                  ->orWhere('alamat', 'like', '%' . $request->search . '%');
+        // Fitur Filter berdasarkan status atau pencarian nama / alamat
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_lokasi', 'like', '%' . $search . '%')
+                  ->orWhere('alamat', 'like', '%' . $search . '%');
+            });
         }
 
         $locations = $query->get();

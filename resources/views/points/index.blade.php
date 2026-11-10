@@ -96,13 +96,7 @@
     <!-- Tombol Kembali & Header Halaman -->
     <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-3">
-            <a href="{{ route('dashboard') }}" 
-               style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background-color: #ffffff; border: 1px solid #e5e7eb; color: #4b5563; text-decoration: none; flex-shrink: 0;"
-               class="hover:bg-gray-50 hover:text-gray-900 transition shadow-sm">
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                </svg>
-            </a>
+            <x-back-link href="{{ route('dashboard') }}" />
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">EV Reward & Poin</h1>
                 <p class="text-xs text-gray-500">Tukarkan poin pengisian daya dengan berbagai voucher menarik</p>

@@ -13,7 +13,9 @@ class Vehicle extends Model
         'merek', 
         'model', 
         'nomor_polisi', 
-        'tipe_konektor'
+        'tipe_konektor',
+        'battery_capacity_kwh',
+        'current_battery_soc',
     ];
 
     public function user()

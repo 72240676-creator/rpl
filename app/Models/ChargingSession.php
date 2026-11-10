@@ -10,6 +10,8 @@ class ChargingSession extends Model
         'user_id',
         'charger_id',
         'vehicle_id',
+        'start_battery_soc',
+        'end_battery_soc',
         'start_time',
         'end_time',
         'energy_consumed_kwh',

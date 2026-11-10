@@ -1,0 +1,14 @@
+.git
+.gitignore
+.gitattributes
+node_modules
+public/build
+public/hot
+vendor
+.env
+.phpunit.result.cache
+docker-compose.yml
+Dockerfile
+.dockerignore
+README.md
+tests/

@@ -526,7 +526,9 @@
                         ⚡ Kelola SPKLU
                     </a>
                 @else
-                    {{-- Menu user biasa tetap dipertahankan --}}
+                    {{-- Menu user biasa (Driver) --}}
+                    <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">🏠 Dashboard</a>
+                    <a href="{{ route('locations.index') }}" class="{{ request()->routeIs('locations.*') ? 'active' : '' }}">🗺️ SPKLU</a>
                     <a href="{{ route('notifications.index') }}" class="{{ request()->routeIs('notifications.*') ? 'active' : '' }}">🔔 Notifikasi</a>
                     <a href="{{ url('/profile') }}" class="{{ request()->is('profile*') ? 'active' : '' }}">👤 Profil &amp; Kendaraan</a>
                 @endif

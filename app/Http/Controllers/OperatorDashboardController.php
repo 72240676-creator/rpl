@@ -13,19 +13,19 @@ class OperatorDashboardController extends Controller
 {
     public function index(): View
     {
-        $chargers = Charger::with(['location', 'inspectionReporter'])
-            ->orderBy('id_location')
-            ->orderBy('device_number')
-            ->get();
-
-        $recentSessions = ChargingSession::with(['user', 'charger.location'])
-            ->latest('start_time')
-            ->limit(6)
-            ->get();
-
         $stats = $this->stats();
 
-        return view('operator.dashboard', compact('chargers', 'recentSessions', 'stats'));
+        return view('operator.dashboard', compact('stats'));
+    }
+
+    public function activity(): View
+    {
+        $sessions = ChargingSession::with(['user', 'charger.location'])
+            ->latest('start_time')
+            ->paginate(12);
+        $stats = $this->stats();
+
+        return view('operator.activity', compact('sessions', 'stats'));
     }
 
     public function live(): JsonResponse
@@ -84,8 +84,9 @@ class OperatorDashboardController extends Controller
             ->where('needs_inspection', true)
             ->latest('inspection_reported_at')
             ->get();
+        $stats = $this->stats();
 
-        return view('operator.reports.inspections', compact('chargers'));
+        return view('operator.reports.inspections', compact('chargers', 'stats'));
     }
 
     private function stats(): array

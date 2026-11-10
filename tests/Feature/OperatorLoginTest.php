@@ -36,7 +36,7 @@ class OperatorLoginTest extends TestCase
         $this->get(route('operator.stations.index'))->assertOk();
     }
 
-    public function test_operator_dashboard_shows_live_station_charger_and_tariff_data(): void
+    public function test_operator_dashboard_shows_summary_and_navigation_to_operator_pages(): void
     {
         $operator = $this->createOperator('dashboard-operator@example.com');
         $location = Location::create([
@@ -64,21 +64,84 @@ class OperatorLoginTest extends TestCase
             ->assertSee('id="operator-clock"', false)
             ->assertSee('data-timezone="Asia/Jakarta"', false)
             ->assertDontSee('· WIB')
-            ->assertSee('SPKLU Operator')
-            ->assertSee('OP-CH-01')
-            ->assertSee('value="2500"', false)
-            ->assertSee('Status charger & tarif', false)
-            ->assertSee('aria-label="Kelola stasiun aktif"', false)
-            ->assertSee('aria-label="Kelola ketersediaan charger"', false)
-            ->assertSee('href="#recent-activity"', false)
-            ->assertSee('data-open-inspection', false)
-            ->assertSee('id="charger-status"', false)
-            ->assertSee('id="recent-activity"', false);
+            ->assertSee('Pusat kendali operasional')
+            ->assertSee('SPKLU & tarif charger', false)
+            ->assertSee('Aktivitas charging')
+            ->assertSee('Laporan pemeriksaan')
+            ->assertSee('href="' . route('operator.stations.index') . '"', false)
+            ->assertSee('href="' . route('operator.activity') . '"', false)
+            ->assertSee('href="' . route('operator.reports.inspections') . '"', false)
+            ->assertDontSee('data-dashboard-panel', false);
 
         $this->get(route('operator.stations.index'))
             ->assertOk()
             ->assertSee('Kembali ke Dashboard Operator')
             ->assertSee(route('operator.dashboard'));
+    }
+
+    public function test_operator_activity_and_inspection_pages_show_their_data(): void
+    {
+        $operator = $this->createOperator('operator-pages@example.com');
+        $driver = User::create([
+            'nama' => 'Pengemudi Aktivitas',
+            'email' => 'operator-pages-driver@example.com',
+            'password' => Hash::make('password123'),
+            'peran' => 'pengemudi',
+            'status_akun' => 'aktif',
+        ]);
+        $location = Location::create([
+            'nama_lokasi' => 'SPKLU Halaman Operator',
+            'alamat' => 'Jl. Merdeka',
+            'latitude' => -6.2,
+            'longitude' => 106.8,
+            'jam_operasional' => '24 Jam',
+            'status' => 'aktif',
+        ]);
+        $charger = Charger::create([
+            'id_location' => $location->id_location,
+            'device_number' => 'OP-PAGE-01',
+            'connector_type' => 'CCS2',
+            'max_power_kw' => 50,
+            'price_per_kwh' => 2500,
+            'is_online' => true,
+            'status' => 'tersedia',
+            'needs_inspection' => true,
+            'inspection_note' => 'Konektor perlu diperiksa.',
+            'inspection_reported_at' => now(),
+            'inspection_reported_by' => $operator->id_user,
+        ]);
+        $vehicle = Vehicle::create([
+            'id_user' => $driver->id_user,
+            'merek' => 'Hyundai',
+            'model' => 'Ioniq',
+            'nomor_polisi' => 'B 9012 EV',
+            'tipe_konektor' => 'CCS2',
+        ]);
+        ChargingSession::create([
+            'user_id' => $driver->id_user,
+            'charger_id' => $charger->id_charger,
+            'vehicle_id' => $vehicle->id_vehicle,
+            'start_time' => now(),
+            'energy_consumed_kwh' => 1.25,
+            'total_cost' => 3125,
+            'status' => 'ongoing',
+        ]);
+
+        $this->actingAs($operator)
+            ->get(route('operator.activity'))
+            ->assertOk()
+            ->assertSee('Aktivitas charging')
+            ->assertSee('OP-PAGE-01')
+            ->assertSee('Pengemudi Aktivitas')
+            ->assertSee('1,25 kWh')
+            ->assertSee('Rp3.125');
+
+        $this->get(route('operator.reports.inspections'))
+            ->assertOk()
+            ->assertSee('Laporan pemeriksaan')
+            ->assertSee('OP-PAGE-01')
+            ->assertSee('Konektor perlu diperiksa.')
+            ->assertSee('Tandai selesai');
     }
 
     public function test_station_management_shows_live_charger_availability_for_each_station(): void
@@ -278,12 +341,12 @@ class OperatorLoginTest extends TestCase
         ]);
 
         $response = $this->actingAs($operator)
-            ->from(route('operator.dashboard'))
+            ->from(route('operator.stations.index'))
             ->put(route('operator.chargers.tariff.update', $charger->id_charger), [
                 'price_per_kwh' => 2600,
             ]);
 
-        $response->assertRedirect(route('operator.dashboard'))
+        $response->assertRedirect(route('operator.stations.index'))
             ->assertSessionHas('success');
         $this->assertDatabaseHas('chargers', [
             'id_charger' => $charger->id_charger,

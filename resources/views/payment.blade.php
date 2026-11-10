@@ -21,9 +21,7 @@
         <!-- Header Form dengan Tombol Kembali -->
         <div style="display: flex; align-items: center; margin-bottom: 25px;">
             <!-- Tombol Kembali ke Halaman Rincian -->
-            <a href="{{ route('charging.session', $session->id) }}" style="text-decoration: none; font-size: 24px; color: #374151; margin-right: 15px;">
-                ←
-            </a>
+            <x-back-link href="{{ route('charging.session', $session->id) }}" label="Kembali ke sesi" style="margin-right: 15px;" />
             <h2 style="margin: 0; font-size: 20px; font-weight: bold; color: #1f2937;">Review pembayaran</h2>
         </div>
 

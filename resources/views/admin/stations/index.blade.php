@@ -16,16 +16,6 @@
         margin-bottom: 26px !important;
     }
 
-    .station-back-link {
-        transition: color .2s ease, background .2s ease, transform .2s ease;
-    }
-
-    .station-back-link:hover {
-        color: #047857 !important;
-        background: #d1fae5 !important;
-        transform: translateX(-2px);
-    }
-
     .station-page-title {
         margin-bottom: 7px !important;
         font-size: clamp(24px, 3vw, 30px) !important;
@@ -460,9 +450,9 @@
 <div class="station-management-page" style="width: 100%; max-width: 1200px; margin: 0 auto; padding: 20px;">
     
     <div class="station-page-heading" style="margin-bottom: 25px;">
-        <a class="station-back-link" href="{{ route('operator.dashboard') }}" style="display: inline-flex; align-items: center; gap: 8px; margin-bottom: 16px; padding: 9px 14px; color: #047857; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 9px; font-size: 13px; font-weight: 700; text-decoration: none;">
-            ← Kembali ke Dashboard Operator
-        </a>
+        <div style="margin-bottom: 16px;">
+            <x-back-link href="{{ route('operator.dashboard') }}" label="Kembali ke Dashboard Operator" />
+        </div>
         <h2 class="station-page-title" style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0 0 8px 0;">Manajemen Lokasi SPKLU & Charger</h2>
         <p class="station-page-description" style="color: #64748b; margin: 0;">Kelola pendaftaran stasiun SPKLU, status operasional, dan unit charger.</p>
     </div>

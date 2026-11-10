@@ -40,9 +40,7 @@
 
 <div style="width: 100%; max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="margin-bottom: 20px;">
-        <a href="{{ route('dashboard') }}" style="color: #64748b; text-decoration: none; font-size: 14px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px;">
-            &larr; Kembali ke Dashboard
-        </a>
+        <x-back-link href="{{ route('dashboard') }}" />
     </div>
     <div style="margin-bottom: 25px;">
         <h2 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0 0 8px 0;">Top Up Saldo EV Charge</h2>

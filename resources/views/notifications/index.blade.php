@@ -15,16 +15,6 @@
         margin-bottom: 20px !important;
     }
 
-    .notification-back a {
-        color: #64748b !important;
-        font-weight: 600 !important;
-        transition: color .2s ease;
-    }
-
-    .notification-back a:hover {
-        color: #047857 !important;
-    }
-
     .notification-header {
         align-items: center !important;
         padding: 26px 30px;
@@ -312,19 +302,10 @@
     ========================================================== --}}
     <div class="notification-back" style="margin-bottom: 16px;">
 
-        <a
-            href="{{ $isAdmin ? route('admin.dashboard') : route('dashboard') }}"
-            style="
-                display: inline-flex;
-                align-items: center;
-                text-decoration: none;
-                color: #4b5563;
-                font-size: 14px;
-                font-weight: 500;
-            "
-        >
-            ← Kembali ke {{ $isAdmin ? 'Dashboard Super Admin' : 'Dashboard' }}
-        </a>
+        <x-back-link
+            :href="$isAdmin ? route('admin.dashboard') : route('dashboard')"
+            :label="$isAdmin ? 'Kembali ke Dashboard Super Admin' : 'Kembali ke Dashboard'"
+        />
 
     </div>
 
