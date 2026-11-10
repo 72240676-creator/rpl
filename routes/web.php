@@ -14,6 +14,7 @@ use App\Http\Controllers\OperatorDashboardController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\WalletController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\ReportController;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Controllers\PointController;
 use App\Models\Location;
@@ -202,9 +203,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/charging/{session}/invoice/pdf', [InvoiceController::class, 'downloadPdf'])->name('charging.invoice.pdf');
 
 
-    // ========================================================
+    // ============================================================
     // ADMIN
-    // ========================================================
+    // ============================================================
 
     Route::middleware([AdminMiddleware::class])
         ->prefix('admin')
@@ -214,6 +215,16 @@ Route::middleware('auth')->group(function () {
             // Dashboard khusus Admin
             Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
             Route::put('/chargers/{id_charger}/inspection', [AdminDashboardController::class, 'updateInspection'])->name('chargers.inspection.update');
+
+
+            // --------------------------------------------------
+            // Laporan Transaksi & Pendapatan
+            // --------------------------------------------------
+
+            Route::get(
+                '/reports',
+                [ReportController::class, 'index']
+            )->name('reports.index');
 
         });
 });
