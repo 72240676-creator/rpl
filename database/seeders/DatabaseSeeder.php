@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
         // Daftarkan semua seeder di sini agar dieksekusi secara otomatis
         $this->call([
             AdminUserSeeder::class,
+            OperatorUserSeeder::class,
             LocationSeeder::class,
             DummyChargingSeeder::class,
         ]);
