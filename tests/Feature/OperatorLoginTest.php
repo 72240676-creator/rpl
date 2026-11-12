@@ -131,6 +131,8 @@ class OperatorLoginTest extends TestCase
             ->get(route('operator.activity'))
             ->assertOk()
             ->assertSee('Aktivitas charging')
+            ->assertSee('id="chargingSessionsTable"', false)
+            ->assertSee('1 sesi tercatat')
             ->assertSee('OP-PAGE-01')
             ->assertSee('Pengemudi Aktivitas')
             ->assertSee('1,25 kWh')
@@ -176,6 +178,11 @@ class OperatorLoginTest extends TestCase
         $response = $this->actingAs($operator)->get(route('operator.stations.index'));
 
         $response->assertOk()
+            ->assertSee('Manajemen SPKLU')
+            ->assertSee('id="stationSearch"', false)
+            ->assertSee('id="stationModal"', false)
+            ->assertSee('data-update-url="' . route('operator.stations.update', $location->id_location) . '"', false)
+            ->assertSee('Lihat 4 unit charger')
             ->assertSee('Ketersediaan charger di SPKLU Ketersediaan')
             ->assertSee('1 siap digunakan')
             ->assertSee('dari 4 unit')

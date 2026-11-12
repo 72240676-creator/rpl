@@ -19,23 +19,20 @@
     .panel-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 19px 22px; border-bottom: 1px solid #eef2f7; }
     .panel-heading h2 { margin: 0 0 4px; color: #0f172a; font-size: 15px; }
     .panel-heading p { margin: 0; color: #94a3b8; font-size: 11px; }
-    .session-list { padding: 3px 22px; }
-    .session-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 16px 0; border-bottom: 1px solid #f1f5f9; }
-    .session-item:last-child { border-bottom: 0; }
-    .session-icon { display: grid; width: 42px; height: 42px; place-items: center; color: #047857; background: #ecfdf5; border: 1px solid #d1fae5; border-radius: 13px; font-size: 18px; }
-    .session-main { min-width: 0; }
-    .session-title { overflow: hidden; margin-bottom: 5px; color: #1e293b; font-size: 12px; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
-    .session-meta { color: #64748b; font-size: 11px; line-height: 1.6; }
-    .session-side { display: grid; justify-items: end; gap: 6px; }
-    .session-cost { color: #0f172a; font-size: 12px; font-weight: 750; white-space: nowrap; }
+    .session-table-wrap { overflow-x: auto; }
+    .session-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .session-table th { padding: 12px 16px; color: #64748b; background: #f8fafc; font-size: 10px; font-weight: 800; letter-spacing: .45px; text-transform: uppercase; white-space: nowrap; }
+    .session-table td { padding: 14px 16px; color: #475569; border-top: 1px solid #f1f5f9; font-size: 11px; vertical-align: middle; }
+    .session-table tbody tr:hover { background: #f8fffb; }
+    .session-device { color: #1e293b; font-weight: 750; }
+    .session-subtext { margin-top: 4px; color: #94a3b8; font-size: 10px; }
+    .session-cost { color: #0f172a; font-weight: 750; white-space: nowrap; }
     .status-badge { display: inline-flex; align-items: center; padding: 5px 9px; color: #047857; background: #d1fae5; border-radius: 999px; font-size: 10px; font-weight: 750; white-space: nowrap; }
     .status-badge.busy { color: #1d4ed8; background: #dbeafe; }
     .status-badge.warning { color: #b45309; background: #fef3c7; }
     .status-badge.offline { color: #64748b; background: #f1f5f9; }
-    .empty-state { padding: 48px 20px; color: #64748b; text-align: center; }
-    .empty-icon { display: grid; width: 48px; height: 48px; margin: 0 auto 12px; place-items: center; color: #047857; background: #ecfdf5; border-radius: 15px; font-size: 22px; }
-    .pagination-wrap { padding: 12px 20px; border-top: 1px solid #f1f5f9; }
-    @media (max-width: 650px) { .operator-page { padding: 25px 14px 40px; } .page-heading { align-items: flex-start; flex-direction: column; } .summary-grid { gap: 9px; } .summary-card { padding: 13px; } .summary-value { font-size: 19px; } .session-list { padding-right: 15px; padding-left: 15px; } .session-item { grid-template-columns: auto minmax(0, 1fr); gap: 10px; } .session-side { grid-column: 2; display: flex; justify-items: initial; justify-content: space-between; } .panel-heading { padding: 16px; } }
+    .empty-state { padding: 38px 20px; color: #64748b; text-align: center; }
+    @media (max-width: 650px) { .operator-page { padding: 25px 14px 40px; } .page-heading { align-items: flex-start; flex-direction: column; } .summary-grid { gap: 9px; } .summary-card { padding: 13px; } .summary-value { font-size: 19px; } .panel-heading { padding: 16px; } }
 </style>
 
 <div class="operator-page">
@@ -49,7 +46,7 @@
             <h1>Aktivitas charging</h1>
             <p>Pantau sesi pengisian terbaru, status pembayaran, energi, dan biaya di seluruh stasiun.</p>
         </div>
-        <span class="activity-count">{{ $sessions->total() }} sesi tercatat</span>
+        <span class="activity-count">{{ $sessions->count() }} sesi tercatat</span>
     </header>
 
     <section class="summary-grid" aria-label="Ringkasan aktivitas charging">
@@ -74,8 +71,20 @@
                 <p>Diurutkan dari sesi terbaru.</p>
             </div>
         </header>
-        <div class="session-list">
-            @forelse ($sessions as $session)
+        <div class="session-table-wrap">
+            <table id="chargingSessionsTable" class="session-table">
+                <thead>
+                    <tr>
+                        <th>Charger & pengguna</th>
+                        <th>Lokasi</th>
+                        <th>Waktu mulai</th>
+                        <th>Energi</th>
+                        <th>Biaya</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+            @foreach ($sessions as $session)
                 @php
                     $sessionStatus = match ($session->status) {
                         'ongoing' => ['Sedang mengisi', 'busy'],
@@ -84,34 +93,25 @@
                         default => [ucfirst($session->status), 'offline'],
                     };
                 @endphp
-                <article class="session-item">
-                    <div class="session-icon" aria-hidden="true">{{ $session->status === 'ongoing' ? '⚡' : '🔋' }}</div>
-                    <div class="session-main">
-                        <div class="session-title">{{ $session->charger?->device_number ?? 'Charger tidak tersedia' }} · {{ $session->user?->nama ?? 'Pengguna tidak tersedia' }}</div>
-                        <div class="session-meta">
-                            {{ $session->charger?->location?->nama_lokasi ?? 'Lokasi tidak tersedia' }}<br>
-                            {{ $session->start_time?->timezone('Asia/Jakarta')->format('d M Y, H:i') ?? '-' }} WIB
-                            @if($session->energy_consumed_kwh !== null)
-                                · {{ number_format((float) $session->energy_consumed_kwh, 2, ',', '.') }} kWh
-                            @endif
-                        </div>
-                    </div>
-                    <div class="session-side">
-                        <span class="status-badge {{ $sessionStatus[1] }}">{{ $sessionStatus[0] }}</span>
-                        <span class="session-cost">Rp{{ number_format((float) $session->total_cost, 0, ',', '.') }}</span>
-                    </div>
-                </article>
-            @empty
-                <div class="empty-state">
-                    <span class="empty-icon" aria-hidden="true">⚡</span>
-                    <strong>Belum ada aktivitas charging</strong>
-                    <div style="margin-top:5px;font-size:12px;">Sesi pengisian akan muncul di sini setelah dimulai.</div>
-                </div>
-            @endforelse
+                <tr>
+                    <td>
+                        <div class="session-device">{{ $session->charger?->device_number ?? 'Charger tidak tersedia' }}</div>
+                        <div class="session-subtext">{{ $session->user?->nama ?? 'Pengguna tidak tersedia' }}</div>
+                    </td>
+                    <td>{{ $session->charger?->location?->nama_lokasi ?? 'Lokasi tidak tersedia' }}</td>
+                    <td data-order="{{ $session->start_time?->timestamp ?? 0 }}">
+                        {{ $session->start_time?->timezone('Asia/Jakarta')->format('d M Y, H:i') ?? '-' }} WIB
+                    </td>
+                    <td data-order="{{ $session->energy_consumed_kwh ?? 0 }}">
+                        {{ $session->energy_consumed_kwh !== null ? number_format((float) $session->energy_consumed_kwh, 2, ',', '.') . ' kWh' : '-' }}
+                    </td>
+                    <td class="session-cost" data-order="{{ $session->total_cost }}">Rp{{ number_format((float) $session->total_cost, 0, ',', '.') }}</td>
+                    <td><span class="status-badge {{ $sessionStatus[1] }}">{{ $sessionStatus[0] }}</span></td>
+                </tr>
+            @endforeach
+                </tbody>
+            </table>
         </div>
-        @if($sessions->hasPages())
-            <div class="pagination-wrap">{{ $sessions->links() }}</div>
-        @endif
     </section>
 </div>
 @endsection

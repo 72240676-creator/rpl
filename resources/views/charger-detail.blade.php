@@ -231,7 +231,7 @@
 
                     @if(isset($vehicles) && count($vehicles) > 0)
                         @foreach($vehicles as $vehicle)
-                            <option value="{{ $vehicle->id_vehicle }}">
+                            <option value="{{ $vehicle->id_vehicle }}" @selected((string) $selectedVehicleId === (string) $vehicle->id_vehicle)>
                                 {{ $vehicle->merek }}
                                 {{ $vehicle->model }}
                                 ({{ $vehicle->nomor_polisi }})

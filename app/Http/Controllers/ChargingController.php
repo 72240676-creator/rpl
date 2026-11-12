@@ -42,10 +42,11 @@ class ChargingController extends Controller
 
     // Ambil semua kendaraan milik user yang sedang login
     $vehicles = auth()->user()->vehicles;
+    $selectedVehicleId = session('selected_vehicle_id');
 
     return view(
         'charger-detail',
-        compact('charger', 'vehicles')
+        compact('charger', 'vehicles', 'selectedVehicleId')
     );
 }
     public function start(Request $request)

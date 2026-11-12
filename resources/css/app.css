@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import 'datatables.net-dt/css/dataTables.dataTables.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
@@ -8,4 +9,64 @@
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+#transactionsTable_wrapper,
+#chargingSessionsTable_wrapper {
+    padding: 16px;
+    color: #64748b;
+    font-size: 12px;
+}
+
+#transactionsTable_wrapper .dt-layout-row,
+#chargingSessionsTable_wrapper .dt-layout-row {
+    gap: 12px;
+    margin: 0 0 14px;
+}
+
+#transactionsTable_wrapper .dt-search input,
+#transactionsTable_wrapper .dt-length select,
+#chargingSessionsTable_wrapper .dt-search input,
+#chargingSessionsTable_wrapper .dt-length select {
+    min-height: 36px;
+    margin-left: 7px;
+    padding: 7px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #fff;
+    color: #334155;
+    font: inherit;
+}
+
+#transactionsTable_wrapper .dt-search input:focus,
+#transactionsTable_wrapper .dt-length select:focus,
+#chargingSessionsTable_wrapper .dt-search input:focus,
+#chargingSessionsTable_wrapper .dt-length select:focus {
+    border-color: #10b981;
+    outline: 3px solid rgba(16, 185, 129, .12);
+}
+
+#transactionsTable_wrapper .dt-paging .dt-paging-button,
+#chargingSessionsTable_wrapper .dt-paging .dt-paging-button {
+    min-width: 34px;
+    margin-left: 4px;
+    padding: 7px 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #fff;
+    color: #475569 !important;
+}
+
+#transactionsTable_wrapper .dt-paging .dt-paging-button.current,
+#chargingSessionsTable_wrapper .dt-paging .dt-paging-button.current {
+    border-color: #059669;
+    background: #059669;
+    color: #fff !important;
+}
+
+#transactionsTable_wrapper .dt-paging .dt-paging-button:hover:not(.disabled),
+#chargingSessionsTable_wrapper .dt-paging .dt-paging-button:hover:not(.disabled) {
+    border-color: #a7f3d0;
+    background: #ecfdf5;
+    color: #047857 !important;
 }

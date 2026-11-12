@@ -20,6 +20,8 @@ class Transaction extends Model
         'description',
         'status',
         'paid_at',
+        'payment_url',
+        'provider_transaction_id',
     ];
 
     protected $casts = [

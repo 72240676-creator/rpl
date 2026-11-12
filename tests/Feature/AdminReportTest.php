@@ -17,6 +17,36 @@ class AdminReportTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_admin_report_uses_datatables_for_search_sorting_and_pagination(): void
+    {
+        $admin = User::create([
+            'nama' => 'Admin EV',
+            'email' => 'admin-pagination@example.com',
+            'password' => Hash::make('password123'),
+            'peran' => 'admin',
+            'status_akun' => 'aktif',
+        ]);
+
+        foreach (range(1, 11) as $number) {
+            Transaction::create([
+                'id_user' => $admin->id_user,
+                'invoice_number' => 'TOPUP-PAGE-' . $number,
+                'payment_method' => 'e-wallet',
+                'amount' => 10000,
+                'type' => 'topup',
+                'description' => 'Penambahan saldo dompet.',
+                'status' => 'pending',
+            ]);
+        }
+
+        $this->actingAs($admin)->get(route('admin.reports.index'))
+            ->assertOk()
+            ->assertSee('id="transactionsTable"', false)
+            ->assertSee('TOPUP-000011')
+            ->assertDontSee('<svg', false)
+            ->assertViewHas('transactions', fn ($transactions) => $transactions->count() === 11);
+    }
+
     public function test_admin_can_view_transaction_and_revenue_reports(): void
     {
         $admin = User::create([
@@ -81,13 +111,33 @@ class AdminReportTest extends TestCase
             'paid_at' => Carbon::now(),
         ]);
 
+        $topUp = Transaction::create([
+            'id_user' => $user->id_user,
+            'invoice_number' => 'TOPUP-054d8578-df26-4b21-9b6b-69be54ea83f1',
+            'payment_method' => 'e-wallet',
+            'amount' => 100000,
+            'type' => 'topup',
+            'description' => 'Penambahan saldo dompet.',
+            'status' => 'success',
+            'paid_at' => Carbon::now(),
+        ]);
+        Transaction::whereKey($topUp->id)->update([
+            'created_at' => Carbon::parse('2026-11-12 18:33:00', 'UTC'),
+        ]);
+
         $response = $this->actingAs($admin)->get(route('admin.reports.index'));
 
         $response->assertOk();
+        $response->assertViewHas('totalPendapatan', 38750);
         $response->assertSee('Laporan Transaksi & Pendapatan SPKLU', false);
         $response->assertSee('INV-REPORT-001');
+        $response->assertSee('TOPUP-' . str_pad((string) $topUp->id, 6, '0', STR_PAD_LEFT));
+        $response->assertDontSee('TOPUP-054d8578-df26-4b21-9b6b-69be54ea83f1');
         $response->assertSee('Pengemudi Setia');
         $response->assertSee('SPKLU Tugu Utama');
+        $response->assertSee('Isi saldo');
+        $response->assertSee('Penambahan saldo dompet.');
+        $response->assertSee('13 Nov 2026 01:33 WIB');
         $response->assertSee('15.50 kWh');
         $response->assertSee('38.750');
     }

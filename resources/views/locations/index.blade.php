@@ -616,11 +616,14 @@
                 <input type="text" id="searchInput" placeholder="Cari SPKLU (contoh: Tugu, Malioboro, Sleman)...">
             </div>
 
-            <button type="button" class="btn-gps" id="btnGps">
-                <span>🎯</span>
-                <span id="gpsBtnText">Cari Terdekat Dari Saya (GPS)</span>
+            <button type="button" class="btn-gps" id="btnGps" aria-describedby="gpsStatus">
+                <span aria-hidden="true">🎯</span>
+                <span id="gpsBtnText">Urutkan dari yang terdekat</span>
             </button>
         </div>
+        <p id="gpsStatus" role="status" aria-live="polite" style="margin: -4px 0 14px; color: #64748b; font-size: 12px;">
+            Aktifkan lokasi untuk mengurutkan stasiun berdasarkan jarak dari posisi Anda.
+        </p>
 
         <div class="filter-row-bottom">
             <span class="filter-label">Tipe Soket:</span>
@@ -931,13 +934,16 @@
     function locateUser(centerMap = false) {
         const btnGps = document.getElementById('btnGps');
         const gpsBtnText = document.getElementById('gpsBtnText');
+        const gpsStatus = document.getElementById('gpsStatus');
 
         if (!("geolocation" in navigator)) {
-            alert("Browser Anda tidak mendukung fitur lokasi GPS.");
+            gpsStatus.innerText = "Browser Anda tidak mendukung fitur lokasi. Daftar tetap ditampilkan menurut urutan awal.";
             return;
         }
 
-        gpsBtnText.innerText = "Mendeteksi Posisi Anda...";
+        btnGps.disabled = true;
+        gpsBtnText.innerText = "Mendeteksi lokasi...";
+        gpsStatus.innerText = "Izinkan akses lokasi untuk mencari stasiun terdekat.";
 
         navigator.geolocation.getCurrentPosition(
             function (position) {
@@ -946,7 +952,8 @@
                 userLocation = L.latLng(lat, lng);
 
                 btnGps.classList.add('active');
-                gpsBtnText.innerText = "🎯 GPS Aktif (Diurutkan Terdekat)";
+                gpsBtnText.innerText = "Lokasi aktif · urutkan ulang";
+                btnGps.disabled = false;
 
                 // Marker radar posisi pengguna
                 if (userMarker) {
@@ -969,14 +976,19 @@
 
                 // Hitung jarak ke setiap SPKLU & Urutkan List
                 calculateDistancesAndSort();
+                gpsStatus.innerText = "Daftar diurutkan dari yang terdekat. Jarak adalah perkiraan garis lurus, bukan jarak perjalanan.";
             },
             function (err) {
-                gpsBtnText.innerText = "Gagal Mengambil GPS (Izin Ditolak)";
-                setTimeout(() => {
-                    gpsBtnText.innerText = "Cari Terdekat Dari Saya (GPS)";
-                }, 3000);
+                const errorMessages = {
+                    1: "Izin lokasi ditolak. Izinkan akses lokasi di pengaturan browser untuk mengurutkan stasiun terdekat.",
+                    2: "Lokasi perangkat tidak dapat ditemukan. Coba lagi atau gunakan peta.",
+                    3: "Permintaan lokasi terlalu lama. Coba lagi.",
+                };
+                gpsBtnText.innerText = "Coba urutkan lagi";
+                gpsStatus.innerText = errorMessages[err.code] || "Lokasi tidak dapat diakses. Coba lagi.";
+                btnGps.disabled = false;
             },
-            { enableHighAccuracy: true, timeout: 8000 }
+            { enableHighAccuracy: false, timeout: 12000, maximumAge: 60000 }
         );
     }
 
@@ -985,11 +997,12 @@
         const R = 6371; // Radius bumi dalam km
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = 
+        const a =
             Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
             Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const boundedA = Math.min(1, Math.max(0, a));
+        const c = 2 * Math.atan2(Math.sqrt(boundedA), Math.sqrt(1 - boundedA));
         return R * c;
     }
 
@@ -1000,27 +1013,31 @@
         const cards = Array.from(container.getElementsByClassName('station-card'));
 
         cards.forEach(card => {
-            const lat = parseFloat(card.dataset.lat);
-            const lng = parseFloat(card.dataset.lng);
+            const lat = Number(card.dataset.lat);
+            const lng = Number(card.dataset.lng);
             const id = card.dataset.id;
 
-            if (lat && lng) {
+            if (Number.isFinite(lat) && Number.isFinite(lng)) {
                 const distKm = calculateDistanceKm(userLocation.lat, userLocation.lng, lat, lng);
                 card.dataset.distance = distKm;
 
                 const badge = document.getElementById(`dist-badge-${id}`);
                 if (badge) {
                     badge.style.display = 'inline-flex';
-                    badge.querySelector('.dist-text').innerText = `${distKm < 1 ? Math.round(distKm * 1000) + ' m' : distKm.toFixed(1) + ' km'} dari Anda`;
+                    const formattedDistance = distKm < 1
+                        ? `${Math.round(distKm * 1000)} m`
+                        : `${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1 }).format(distKm)} km`;
+                    badge.querySelector('.dist-text').innerText = `${formattedDistance} dari Anda`;
                 }
             } else {
-                card.dataset.distance = 999999;
+                card.dataset.distance = Number.POSITIVE_INFINITY;
             }
         });
 
         // Urutkan kartu berdasarkan jarak terdekat
-        cards.sort((a, b) => parseFloat(a.dataset.distance) - parseFloat(b.dataset.distance));
+        cards.sort((a, b) => Number(a.dataset.distance) - Number(b.dataset.distance));
         cards.forEach(card => container.appendChild(card));
+        applyFilters();
     }
 
     // 6. Fokuskan Peta ke Stasiun yang Dipilih

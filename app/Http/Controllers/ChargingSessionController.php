@@ -20,8 +20,9 @@ class ChargingSessionController extends Controller
      */
     public function start(Request $request)
     {
-        $request->validate([
-            'charger_id' => 'required',
+        $validated = $request->validate([
+            'charger_id' => 'required|integer|exists:chargers,id_charger',
+            'vehicle_id' => 'required|integer',
         ]);
 
         /** @var \App\Models\User $user */
@@ -49,17 +50,19 @@ class ChargingSessionController extends Controller
                 );
         }
 
-        $charger = Charger::where('id_charger', $request->charger_id)->first() ?? Charger::findOrFail($request->charger_id);
+        $charger = Charger::findOrFail($validated['charger_id']);
 
-        $vehicle = $user->vehicles()->first();
+        $vehicle = $user->vehicles()
+            ->where('id_vehicle', $validated['vehicle_id'])
+            ->first();
 
         if (!$vehicle) {
-            return back()->with(
-                'error',
-                'Anda belum memiliki kendaraan.'
-            );
+            return back()
+                ->withErrors(['vehicle_id' => 'Kendaraan yang dipilih tidak terdaftar pada akun Anda.'])
+                ->withInput();
         }
 
+        $request->session()->put('selected_vehicle_id', $vehicle->id_vehicle);
         $startSoc = (int) ($vehicle->current_battery_soc ?? 25);
         if ($startSoc >= 100) {
             // Jika mobil sudah 100% penuh dari sesi lalu, simulasikan mobil telah dipakai berkendara (sisa 28%)

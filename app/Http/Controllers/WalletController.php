@@ -1,54 +1,77 @@
 <?php
 
 namespace App\Http\Controllers;
+
+use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class WalletController extends Controller
 {
     public function index()
     {
-        return view('topup'); // Menampilkan halaman top up
+        $user = Auth::user();
+
+        return view('topup', [
+            'user' => $user,
+            'recentTopUps' => Transaction::where('id_user', $user->id_user)
+                ->where('type', 'topup')
+                ->latest()
+                ->paginate(5),
+            'topupReference' => (string) Str::uuid(),
+        ]);
     }
 
     public function store(Request $request)
     {
-        // Validasi input
-        $request->validate([
-            'nominal' => 'required|numeric|min:10000',
-            'metode_pembayaran' => 'required|string'
+        $validated = $request->validate([
+            'nominal' => ['required', 'integer', 'min:10000', 'max:5000000'],
+            'topup_reference' => ['required', 'uuid'],
         ]);
 
-        // Ambil data user yang sedang login
-        $user = User::find(Auth::id());
-        
-        // Tambahkan saldo (Simulasi pembayaran sukses)
-        $user->saldo = $user->saldo + $request->nominal;
-        $user->save(); // Simpan ke database
+        $userId = Auth::user()->id_user;
+        $invoiceNumber = 'TOPUP-' . $validated['topup_reference'];
+        $amount = (int) $validated['nominal'];
 
-        return redirect()->route('dashboard')->with('success', 'Top Up sebesar Rp' . number_format($request->nominal, 0, ',', '.') . ' menggunakan ' . strtoupper($request->metode_pembayaran) . ' berhasil!');
-    }
-    public function processTopUp(Request $request)
-    {
-        // Validasi nominal input (minimal 10.000)
-        $request->validate([
-            'amount' => 'required|numeric|min:10000',
-            'payment_method' => 'required',
-        ], [
-            'amount.min' => 'Nominal top up minimal adalah Rp 10.000.',
-            'amount.required' => 'Silakan masukkan atau pilih nominal top up.',
-        ]);
+        $created = DB::transaction(function () use ($userId, $invoiceNumber, $amount) {
+            $user = User::whereKey($userId)->lockForUpdate()->firstOrFail();
+            $topUp = Transaction::firstOrCreate(
+                ['invoice_number' => $invoiceNumber],
+                [
+                    'id_user' => $userId,
+                    'session_id' => null,
+                    'payment_method' => 'e-wallet',
+                    'amount' => $amount,
+                    'type' => 'topup',
+                    'description' => 'Penambahan saldo dompet.',
+                    'status' => 'success',
+                    'paid_at' => now(),
+                ]
+            );
 
-        $user = Auth::user();
+            if (!$topUp->wasRecentlyCreated) {
+                if ((int) $topUp->id_user !== (int) $userId || $topUp->type !== 'topup') {
+                    throw ValidationException::withMessages([
+                        'topup_reference' => 'Referensi transaksi tidak valid. Muat ulang halaman dan coba kembali.',
+                    ]);
+                }
 
-        // Tambahkan nominal yang diketik ke saldo user
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
+                return false;
+            }
 
-        $user->saldo += $request->nominal;
-        $user->save();
+            $user->increment('saldo', $amount);
 
-        return redirect()->back()->with('success', 'Top up sebesar Rp ' . number_format($request->amount, 0, ',', '.') . ' berhasil!');
+            return true;
+        });
+
+        return redirect()
+            ->route('topup.index')
+            ->with('success', $created
+                ? 'Saldo berhasil ditambahkan sebesar Rp ' . number_format($amount, 0, ',', '.') . '.'
+                : 'Transaksi ini sudah diproses sebelumnya.');
     }
 }

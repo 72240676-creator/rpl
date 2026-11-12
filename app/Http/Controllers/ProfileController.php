@@ -36,6 +36,25 @@ class ProfileController extends Controller
 
         return back()->with('success', 'Kendaraan listrik berhasil didaftarkan!');
     }
+
+    public function selectVehicle(Request $request)
+    {
+        $validated = $request->validate([
+            'vehicle_id' => 'required|integer',
+        ]);
+
+        $vehicle = Auth::user()->vehicles()
+            ->where('id_vehicle', $validated['vehicle_id'])
+            ->firstOrFail();
+
+        $request->session()->put('selected_vehicle_id', $vehicle->id_vehicle);
+
+        return redirect()->route('dashboard')->with(
+            'success',
+            'Kendaraan aktif diubah ke ' . $vehicle->merek . ' ' . $vehicle->model . '.'
+        );
+    }
+
     public function updateProfile(Request $request)
     {
         /** @var \App\Models\User $user */
