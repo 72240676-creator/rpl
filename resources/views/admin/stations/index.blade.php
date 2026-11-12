@@ -413,14 +413,18 @@
     }
 
     .station-charger-item {
-        display: flex;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
-        justify-content: space-between;
         gap: 12px;
         padding: 11px 12px;
         border: 1px solid #eef2f6;
         border-radius: 10px;
         background: #fbfdfe;
+    }
+
+    .station-charger-details-content {
+        min-width: 0;
     }
 
     .station-charger-name {
@@ -440,33 +444,58 @@
         display: flex;
         flex: 0 0 auto;
         align-items: center;
-        gap: 8px;
+        gap: 7px;
     }
 
-    .station-link {
-        color: #047857;
-        font-size: 10px;
-        font-weight: 700;
-        text-decoration: none;
+    .station-charger-actions form {
+        display: flex;
+        margin: 0;
     }
 
-    .station-link:hover {
-        text-decoration: underline;
-    }
-
-    .station-delete-link {
-        padding: 0;
-        border: 0;
-        color: #b91c1c;
-        background: transparent;
+    .station-charger-action {
+        display: inline-flex;
+        width: 82px;
+        min-height: 34px;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        padding: 0 9px;
+        border: 1px solid transparent;
+        border-radius: 8px;
         font: inherit;
         font-size: 10px;
         font-weight: 700;
+        text-decoration: none;
+        white-space: nowrap;
         cursor: pointer;
+        transition: background .18s ease, border-color .18s ease, color .18s ease;
     }
 
-    .station-delete-link:hover {
-        text-decoration: underline;
+    .station-charger-action.tariff {
+        border-color: #a7f3d0;
+        color: #047857;
+        background: #ecfdf5;
+    }
+
+    .station-charger-action.tariff:hover {
+        border-color: #6ee7b7;
+        background: #d1fae5;
+    }
+
+    .station-charger-action.delete {
+        border-color: #fecaca;
+        color: #b91c1c;
+        background: #fff7f7;
+    }
+
+    .station-charger-action.delete:hover {
+        border-color: #fca5a5;
+        background: #fee2e2;
+    }
+
+    .station-charger-action:focus-visible {
+        outline: 3px solid rgba(16, 185, 129, .2);
+        outline-offset: 2px;
     }
 
     .station-empty {
@@ -769,6 +798,19 @@
             flex: 1;
         }
 
+        .station-charger-item {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .station-charger-actions {
+            justify-content: flex-end;
+        }
+
+        .station-charger-action {
+            width: 96px;
+            min-height: 36px;
+        }
+
         .station-form-grid,
         .charger-form-grid,
         .charger-form-grid.three {
@@ -969,7 +1011,7 @@
                             <div class="station-charger-list">
                                 @foreach ($chargers as $charger)
                                     <div class="station-charger-item">
-                                        <div>
+                                        <div class="station-charger-details-content">
                                             <div class="station-charger-name">{{ $charger->device_number }}</div>
                                             <div class="station-charger-meta">
                                                 {{ $charger->connector_type }} · {{ number_format((float) $charger->max_power_kw, 0, ',', '.') }} kW
@@ -978,11 +1020,11 @@
                                             </div>
                                         </div>
                                         <div class="station-charger-actions">
-                                            <a class="station-link" href="{{ route('operator.chargers.tariff.edit', $charger->id_charger) }}">Atur tarif</a>
+                                            <a class="station-charger-action tariff" href="{{ route('operator.chargers.tariff.edit', $charger->id_charger) }}">Atur tarif</a>
                                             <form action="{{ route('operator.chargers.destroy', $charger->id_charger) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus charger ini?')">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button class="station-delete-link" type="submit">Hapus</button>
+                                                <button class="station-charger-action delete" type="submit">Hapus</button>
                                             </form>
                                         </div>
                                     </div>
