@@ -42,7 +42,7 @@
 
     <!-- Tabel Data Laporan -->
     <div style="background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+        <table id="transactionsTable" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
             <thead>
                 <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; color: #64748b; font-weight: 600;">
                     <th style="padding: 12px 16px;">No. Invoice</th>
@@ -56,22 +56,24 @@
                 </tr>
             </thead>
             <tbody>
-                @forelse($transactions as $trx)
+                @foreach($transactions as $trx)
                 <tr style="border-bottom: 1px solid #f1f5f9; color: #334155;">
                     <td style="padding: 12px 16px; font-family: monospace; font-weight: 600; color: #047857;">
-                        {{ $trx->invoice_number ?? '#TRX-'.$trx->id }}
+                        {{ $trx->type === 'topup'
+                            ? 'TOPUP-' . str_pad((string) $trx->id, 6, '0', STR_PAD_LEFT)
+                            : ($trx->invoice_number ?? '#TRX-' . $trx->id) }}
                     </td>
-                    <td style="padding: 12px 16px; font-weight: 600;">
-                        {{ $trx->chargingSession->user->nama ?? 'Pengguna' }}
+                    <td data-order="{{ $trx->amount }}" style="padding: 12px 16px; font-weight: 600;">
+                        {{ $trx->user->nama ?? $trx->chargingSession->user->nama ?? 'Pengguna' }}
                     </td>
                     <td style="padding: 12px 16px;">
-                        {{ $trx->chargingSession->charger->location->nama_lokasi ?? '-' }}
+                        {{ $trx->chargingSession->charger->location->nama_lokasi ?? ($trx->type === 'topup' ? 'Isi saldo' : '-') }}
                     </td>
                     <td style="padding: 12px 16px;">
-                        {{ number_format($trx->chargingSession->energy_consumed_kwh ?? 0, 2) }} kWh
+                        {{ $trx->chargingSession ? number_format($trx->chargingSession->energy_consumed_kwh ?? 0, 2) . ' kWh' : '-' }}
                     </td>
                     <td style="padding: 12px 16px; text-transform: uppercase;">
-                        {{ $trx->payment_method ?? '-' }}
+                        {{ $trx->type === 'topup' ? ($trx->description ?? 'Midtrans') : ($trx->payment_method ?? '-') }}
                     </td>
                     <td style="padding: 12px 16px; font-weight: 600;">
                         Rp {{ number_format($trx->amount, 0, ',', '.') }}
@@ -89,20 +91,13 @@
                             {{ strtoupper($trx->status) }}
                         </span>
                     </td>
-                    <td style="padding: 12px 16px; color: #64748b; font-size: 12px;">
-                        {{ $trx->created_at ? $trx->created_at->format('d M Y H:i') : '-' }}
+                    <td data-order="{{ $trx->created_at?->timestamp ?? 0 }}" style="padding: 12px 16px; color: #64748b; font-size: 12px;">
+                        {{ $trx->created_at ? $trx->created_at->timezone('Asia/Jakarta')->format('d M Y H:i') . ' WIB' : '-' }}
                     </td>
                 </tr>
-                @empty
-                <tr>
-                    <td colspan="8" style="padding: 30px; text-align: center; color: #94a3b8;">Belum ada data transaksi laporan.</td>
-                </tr>
-                @endforelse
+                @endforeach
             </tbody>
         </table>
-        <div style="padding: 16px; border-top: 1px solid #e2e8f0;">
-            {{ $transactions->links() }}
-        </div>
     </div>
 </div>
 @endsection

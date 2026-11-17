@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EV Charging - @yield('title')</title>
 
+    @if (request()->routeIs('admin.reports.*', 'operator.activity'))
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @endif
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
@@ -32,8 +35,13 @@
         .brand-container { display: flex; align-items: baseline; gap: 12px; }
         .brand-logo { font-size: 24px; font-weight: 700; color: #059669; margin: 0; }
         .brand-team { font-size: 12px; font-weight: 600; color: #94a3b8; letter-spacing: 1.5px; text-transform: uppercase; }
-        main { flex: 1; display: flex; justify-content: center; align-items: center; padding: 20px; }
-
+       main {
+                flex: 1;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: 30px;
+            }
         /* =========================================
            2. KOMPONEN KARTU FORMULIR (Clean Minimalist)
            ========================================= */

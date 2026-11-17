@@ -22,7 +22,7 @@ class OperatorDashboardController extends Controller
     {
         $sessions = ChargingSession::with(['user', 'charger.location'])
             ->latest('start_time')
-            ->paginate(12);
+            ->get();
         $stats = $this->stats();
 
         return view('operator.activity', compact('sessions', 'stats'));

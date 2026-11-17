@@ -20,6 +20,9 @@
     $pricePerKwh = is_object($charger)
         ? ($charger->price_per_kwh ?? 2467)
         : 2467;
+
+    $availableBalance = (int) (auth()->user()->saldo ?? 0);
+    $maxReservation = min($availableBalance, 5000000);
 @endphp
 
 <div style="
@@ -231,7 +234,7 @@
 
                     @if(isset($vehicles) && count($vehicles) > 0)
                         @foreach($vehicles as $vehicle)
-                            <option value="{{ $vehicle->id_vehicle }}">
+                            <option value="{{ $vehicle->id_vehicle }}" @selected((string) $selectedVehicleId === (string) $vehicle->id_vehicle)>
                                 {{ $vehicle->merek }}
                                 {{ $vehicle->model }}
                                 ({{ $vehicle->nomor_polisi }})
@@ -239,6 +242,30 @@
                         @endforeach
                     @endif
                 </select>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label for="reserved_amount" style="display: block; margin-bottom: 8px; font-weight: 600; color: #0f172a; font-size: 14px;">
+                    Batas dana sesi (Rp):
+                </label>
+                <input
+                    type="number"
+                    name="reserved_amount"
+                    id="reserved_amount"
+                    min="10000"
+                    max="{{ $maxReservation }}"
+                    step="1000"
+                    value="{{ old('reserved_amount', min(50000, $maxReservation)) }}"
+                    required
+                    style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-size: 14px;"
+                >
+                <p style="margin: 7px 0 0; color: #64748b; font-size: 12px;">
+                    Saldo tersedia Rp {{ number_format($availableBalance, 0, ',', '.') }}.
+                    Dana ini ditahan saat mulai, biaya aktual dipotong dan sisanya dikembalikan otomatis.
+                    @if($maxReservation < 10000)
+                        <a href="{{ route('topup.index') }}" style="color: #059669; font-weight: 700;">Top up minimal Rp 10.000 untuk mulai.</a>
+                    @endif
+                </p>
             </div>
 
             <div style="
@@ -259,10 +286,11 @@
                         border-radius: 14px;
                         font-size: 16px;
                         font-weight: 700;
-                        cursor: pointer;
+                        cursor: {{ $maxReservation < 10000 ? 'not-allowed' : 'pointer' }};
                         box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
                         transition: transform 0.1s ease;
                     "
+                    @disabled($maxReservation < 10000)
                 >
                     ⚡ Mulai Pengisian Daya
                 </button>

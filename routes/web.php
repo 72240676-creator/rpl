@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
 use App\Http\Controllers\ChargingSessionController;
+use App\Models\ChargingSession;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\LocationController;
@@ -18,7 +19,6 @@ use App\Http\Controllers\ReportController;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Controllers\PointController;
 use App\Models\Location;
-
 
 // ============================================================
 // HALAMAN UTAMA
@@ -69,10 +69,36 @@ Route::middleware('auth')->group(function () {
     // DASHBOARD
     // ========================================================
 
-    Route::get('/dashboard', function () {
-        $nearestLocation = Location::where('status', 'aktif')->first();
+    Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
+        $user = Auth::user();
+        $availableChargers = static fn ($query) => $query
+            ->where('status', 'tersedia')
+            ->where('is_online', true);
 
-        return view('dashboard', compact('nearestLocation'));
+        $dashboardLocations = Location::query()
+            ->where('status', 'aktif')
+            ->whereHas('chargers', $availableChargers)
+            ->withCount(['chargers as available_chargers_count' => $availableChargers])
+            ->with(['chargers' => static fn ($query) => $availableChargers($query)
+                ->select('id_charger', 'id_location', 'connector_type', 'max_power_kw', 'price_per_kwh')
+                ->orderByDesc('max_power_kw')])
+            ->orderBy('nama_lokasi')
+            ->get();
+
+        $vehicles = $user->vehicles()->orderBy('id_vehicle')->get();
+        $vehicle = $vehicles->firstWhere('id_vehicle', $request->session()->get('selected_vehicle_id'))
+            ?? $vehicles->first();
+
+        if ($vehicle) {
+            $request->session()->put('selected_vehicle_id', $vehicle->id_vehicle);
+        }
+
+        $ongoingSession = ChargingSession::where('user_id', $user->id_user)
+            ->where('status', 'ongoing')
+            ->latest('start_time')
+            ->first();
+
+        return view('dashboard', compact('dashboardLocations', 'vehicles', 'vehicle', 'ongoingSession'));
     })->name('dashboard');
 
 
@@ -97,6 +123,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/profile', [ProfileController::class, 'index']);
     Route::post('/profile/vehicle', [ProfileController::class, 'storeVehicle']);
+    Route::post('/profile/vehicle/select', [ProfileController::class, 'selectVehicle'])->name('vehicles.select');
     Route::put('/profile/update', [ProfileController::class, 'updateProfile'])->name('profile.update');
     Route::post('/vehicles/{vehicle}/discharge', [ProfileController::class, 'discharge'])->name('vehicles.discharge');
 

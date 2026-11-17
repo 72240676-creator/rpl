@@ -50,5 +50,9 @@ class LocationMapTest extends TestCase
         $response->assertSee('CCS2');
         $response->assertSee('50 kW');
         $response->assertSee('Peta Jaringan SPKLU Interaktif');
+        $response->assertSee('Urutkan dari yang terdekat');
+        $response->assertSee('id="gpsStatus" role="status" aria-live="polite"', false);
+        $response->assertSee('data-lat="-7.771234"', false);
+        $response->assertSee('data-lng="110.37891"', false);
     }
 }

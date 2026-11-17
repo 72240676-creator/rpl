@@ -10,8 +10,9 @@ class ReportController extends Controller
 {
     public function index(Request $request)
     {
-        // Transaksi di-load bersama relasi ChargingSession -> User & Charger -> Location
+        // Top up has a user but no charging session; charging payments have both.
         $query = Transaction::with([
+            'user',
             'chargingSession.user',
             'chargingSession.charger.location'
         ]);
@@ -24,10 +25,12 @@ class ReportController extends Controller
             ]);
         }
 
-        $transactions = $query->latest()->paginate(10);
+        $transactions = $query->latest()->get();
 
         // Ringkasan Statistik Laporan
-        $totalPendapatan = Transaction::whereIn('status', ['paid', 'success', 'completed'])->sum('amount');
+        $totalPendapatan = Transaction::where('type', 'payment')
+            ->whereIn('status', ['paid', 'success', 'completed'])
+            ->sum('amount');
         $totalPengisian  = ChargingSession::count();
         $totalDayaKwh    = ChargingSession::sum('energy_consumed_kwh') ?? 0;
 

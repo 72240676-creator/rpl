@@ -16,7 +16,7 @@ class StationController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'nama_lokasi'     => 'required|string|max:255',
             'alamat'          => 'required|string',
             'latitude'        => 'required|numeric',
@@ -24,9 +24,14 @@ class StationController extends Controller
             'jam_operasional' => 'required|string',
             'fasilitas'       => 'nullable|string',
             'status'          => 'required|in:aktif,tutup_sementara,penuh,perawatan',
+            'foto'            => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
-        Location::create($request->all());
+        if ($request->hasFile('foto')) {
+            $validated['foto'] = $request->file('foto')->store('stations', 'public');
+        }
+
+        Location::create($validated);
 
         return redirect()->back()->with('success', 'Stasiun SPKLU berhasil ditambahkan!');
     }
@@ -40,7 +45,7 @@ class StationController extends Controller
     {
         $location = Location::findOrFail($id_location);
         
-        $request->validate([
+        $validated = $request->validate([
             'nama_lokasi'     => 'required|string|max:255',
             'alamat'          => 'required|string',
             'latitude'        => 'required|numeric',
@@ -48,9 +53,14 @@ class StationController extends Controller
             'jam_operasional' => 'required|string',
             'fasilitas'       => 'nullable|string',
             'status'          => 'required|in:aktif,tutup_sementara,penuh,perawatan',
+            'foto'            => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
-        $location->update($request->all());
+        if ($request->hasFile('foto')) {
+            $validated['foto'] = $request->file('foto')->store('stations', 'public');
+        }
+
+        $location->update($validated);
 
         return redirect()->route('operator.stations.index')->with('success', 'Data stasiun berhasil diperbarui!');
     }
