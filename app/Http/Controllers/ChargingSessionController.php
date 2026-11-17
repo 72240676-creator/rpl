@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\ValidationException;
 
 class ChargingSessionController extends Controller
 {
@@ -23,6 +24,7 @@ class ChargingSessionController extends Controller
         $validated = $request->validate([
             'charger_id' => 'required|integer|exists:chargers,id_charger',
             'vehicle_id' => 'required|integer',
+            'reserved_amount' => 'required|integer|min:10000|max:5000000',
         ]);
 
         /** @var \App\Models\User $user */
@@ -36,21 +38,12 @@ class ChargingSessionController extends Controller
 
         $userId = $user->id_user ?? $user->id;
 
-        // Cek apakah masih ada charging yang berjalan
-        $ongoingSession = ChargingSession::where('user_id', $userId)
-            ->where('status', 'ongoing')
-            ->first();
-
-        if ($ongoingSession) {
-            return redirect()
-                ->route('charging.session', $ongoingSession->id)
-                ->with(
-                    'error',
-                    'Anda masih memiliki sesi pengisian yang sedang berjalan.'
-                );
-        }
-
         $charger = Charger::findOrFail($validated['charger_id']);
+        if ((float) $charger->price_per_kwh <= 0) {
+            throw ValidationException::withMessages([
+                'charger_id' => 'Tarif charger belum valid. Silakan pilih charger lain atau hubungi operator.',
+            ]);
+        }
 
         $vehicle = $user->vehicles()
             ->where('id_vehicle', $validated['vehicle_id'])
@@ -62,27 +55,66 @@ class ChargingSessionController extends Controller
                 ->withInput();
         }
 
-        $request->session()->put('selected_vehicle_id', $vehicle->id_vehicle);
-        $startSoc = (int) ($vehicle->current_battery_soc ?? 25);
-        if ($startSoc >= 100) {
-            // Jika mobil sudah 100% penuh dari sesi lalu, simulasikan mobil telah dipakai berkendara (sisa 28%)
-            $startSoc = 28;
-            $vehicle->update(['current_battery_soc' => 28]);
+        $reservedAmount = (int) $validated['reserved_amount'];
+        $session = DB::transaction(function () use ($userId, $charger, $vehicle, $reservedAmount) {
+            $lockedUser = User::whereKey($userId)->lockForUpdate()->firstOrFail();
+            $ongoingSession = ChargingSession::where('user_id', $userId)
+                ->where('status', 'ongoing')
+                ->first();
+
+            if ($ongoingSession) {
+                return $ongoingSession;
+            }
+
+            if ((float) $lockedUser->saldo < $reservedAmount) {
+                throw ValidationException::withMessages([
+                    'reserved_amount' => 'Saldo tidak mencukupi untuk menahan batas biaya ini. Silakan top up atau pilih batas yang lebih rendah.',
+                ]);
+            }
+
+            $startSoc = (int) ($vehicle->current_battery_soc ?? 25);
+            if ($startSoc >= 100) {
+                $startSoc = 28;
+                $vehicle->update(['current_battery_soc' => 28]);
+            }
+
+            $lockedUser->decrement('saldo', $reservedAmount);
+
+            $session = ChargingSession::create([
+                'user_id' => $userId,
+                'charger_id' => $charger->id_charger,
+                'vehicle_id' => $vehicle->id_vehicle,
+                'start_battery_soc' => $startSoc,
+                'end_battery_soc' => null,
+                'start_time' => now(),
+                'end_time' => null,
+                'energy_consumed_kwh' => 0,
+                'total_cost' => 0,
+                'reserved_amount' => $reservedAmount,
+                'status' => 'ongoing',
+            ]);
+
+            Transaction::create([
+                'id_user' => $userId,
+                'session_id' => $session->id,
+                'invoice_number' => 'HOLD-' . $session->id,
+                'payment_method' => 'e-wallet',
+                'amount' => $reservedAmount,
+                'type' => 'payment',
+                'description' => 'Reservasi dana untuk sesi pengisian.',
+                'status' => 'pending',
+            ]);
+
+            return $session;
+        });
+
+        if (!$session->wasRecentlyCreated) {
+            return redirect()
+                ->route('charging.session', $session->id)
+                ->with('error', 'Anda masih memiliki sesi pengisian yang sedang berjalan.');
         }
 
-        // Buat charging session
-        $session = ChargingSession::create([
-            'user_id' => $userId,
-            'charger_id' => $charger->id_charger ?? $charger->id,
-            'vehicle_id' => $vehicle->id_vehicle ?? $vehicle->id,
-            'start_battery_soc' => $startSoc,
-            'end_battery_soc' => null,
-            'start_time' => now(),
-            'end_time' => null,
-            'energy_consumed_kwh' => 0,
-            'total_cost' => 0,
-            'status' => 'ongoing',
-        ]);
+        $request->session()->put('selected_vehicle_id', $vehicle->id_vehicle);
 
         return redirect()
             ->route('charging.session', $session->id);
@@ -117,106 +149,165 @@ class ChargingSessionController extends Controller
         Request $request,
         ChargingSession $session
     ) {
+        $validated = $request->validate([
+            'energy_consumed_kwh' => 'sometimes|numeric|min:0',
+            'total_cost' => 'sometimes|numeric|min:0',
+            'end_battery_soc' => 'sometimes|integer|between:0,100',
+        ]);
+
         $userId = Auth::user()->id_user ?? Auth::id();
 
         if ($session->user_id != $userId) {
             abort(403);
         }
 
-        /*
-         * HANYA jalankan jika status masih ongoing.
-         * Ini penting supaya refresh / klik dua kali tidak membuat notifikasi duplikat.
-         */
-        if (strtolower($session->status) === 'ongoing') {
+        $result = DB::transaction(function () use ($session, $validated) {
+            $lockedSession = ChargingSession::whereKey($session->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
+            if (strtolower($lockedSession->status) !== 'ongoing') {
+                return [
+                    'session' => $lockedSession,
+                    'newly_completed' => false,
+                    'prepaid' => (float) ($lockedSession->reserved_amount ?? 0) > 0,
+                    'earned_points' => 0,
+                ];
+            }
+
+            $lockedSession->loadMissing(['vehicle', 'user']);
+            $charger = Charger::where('id_charger', $lockedSession->charger_id)->first()
+                ?? $lockedSession->charger;
             $endTime = now();
+            $durationHours = $lockedSession->start_time->diffInSeconds($endTime) / 3600;
+            $reportedEnergy = (float) ($validated['energy_consumed_kwh'] ?? 0);
+            $energyConsumed = $reportedEnergy > 0
+                ? $reportedEnergy
+                : $durationHours * (float) ($charger->max_power_kw ?? 0);
+            $tariff = (float) ($charger->price_per_kwh ?? 0);
+            $reservedAmount = (float) ($lockedSession->reserved_amount ?? 0);
+            $prepaid = $reservedAmount > 0;
 
-            // Hitung durasi charging
-            $durationHours = $session->start_time->diffInSeconds($endTime) / 3600;
+            if ($prepaid) {
+                if ($tariff <= 0) {
+                    throw ValidationException::withMessages([
+                        'session' => 'Tarif charger tidak valid; sesi belum dapat diselesaikan.',
+                    ]);
+                }
 
-            $charger = Charger::where('id_charger', $session->charger_id)->first() ?? $session->charger;
-
-            // Hitung energi (dukung input dari telemetri real-time jika ada)
-            if ($request->filled('energy_consumed_kwh') && (float) $request->energy_consumed_kwh > 0) {
-                $energyConsumed = (float) $request->energy_consumed_kwh;
+                $energyConsumed = floor(min($energyConsumed, $reservedAmount / $tariff) * 1000) / 1000;
+                $totalCost = min($reservedAmount, round($energyConsumed * $tariff));
             } else {
-                $energyConsumed = $durationHours * (float) ($charger->max_power_kw ?? 0);
+                $totalCost = !empty($validated['total_cost']) && (float) $validated['total_cost'] > 0
+                    ? round((float) $validated['total_cost'])
+                    : round($energyConsumed * $tariff);
+                $energyConsumed = round(max(0.01, $energyConsumed), 3);
+                $totalCost = round(max(0, $totalCost));
             }
 
-            // Hitung biaya
-            if ($request->filled('total_cost') && (float) $request->total_cost > 0) {
-                $totalCost = round((float) $request->total_cost);
-            } else {
-                $totalCost = round($energyConsumed * (float) ($charger->price_per_kwh ?? 0));
-            }
+            $energyConsumed = round(max(0, $energyConsumed), 3);
+            $batteryCapacity = (float) ($lockedSession->vehicle->battery_capacity_kwh ?? 60.0);
+            $startSoc = (int) ($lockedSession->start_battery_soc ?? 25);
+            $finalSoc = $prepaid || empty($validated['end_battery_soc'])
+                ? min(100, round($startSoc + (($energyConsumed / max(1, $batteryCapacity)) * 100)))
+                : min(100, (int) $validated['end_battery_soc']);
 
-            $energyConsumed = round(max(0.01, $energyConsumed), 3);
-            $totalCost = round(max(0, $totalCost));
-
-            // Hitung persentase baterai akhir
-            $batteryCapacity = (float) ($session->vehicle->battery_capacity_kwh ?? 60.0);
-            if ($request->filled('end_battery_soc') && (int) $request->end_battery_soc > 0) {
-                $finalSoc = min(100, (int) $request->end_battery_soc);
-            } else {
-                $startSoc = (int) ($session->start_battery_soc ?? 25);
-                $finalSoc = min(100, round($startSoc + (($energyConsumed / max(1, $batteryCapacity)) * 100)));
-            }
-
-            /*
-             * Simpan hasil charging.
-             */
-            $session->update([
+            $lockedSession->update([
                 'end_time' => $endTime,
                 'end_battery_soc' => $finalSoc,
                 'energy_consumed_kwh' => $energyConsumed,
                 'total_cost' => $totalCost,
-                'status' => 'completed',
+                'status' => $prepaid ? 'paid' : 'completed',
             ]);
 
-            /*
-             * Update status baterai pada mobil secara persisten
-             */
-            if ($session->vehicle) {
-                $session->vehicle->update([
-                    'current_battery_soc' => $finalSoc,
-                ]);
+            if ($lockedSession->vehicle) {
+                $lockedSession->vehicle->update(['current_battery_soc' => $finalSoc]);
             }
 
-            /*
-             * Charger tersedia kembali.
-             */
             if ($charger) {
-                $charger->update([
-                    'status' => 'tersedia',
-                ]);
+                $charger->update(['status' => 'tersedia']);
             }
 
-            /*
-             * NOTIFIKASI CHARGING SELESAI
-             */
-            if ($session->user) {
+            $earnedPoints = 0;
+            if ($prepaid) {
+                $user = User::whereKey($lockedSession->user_id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+                $refund = max(0, (int) $reservedAmount - (int) $totalCost);
+
+                if ($refund > 0) {
+                    $user->increment('saldo', $refund);
+                }
+
+                $earnedPoints = (int) floor($totalCost / 10000);
+                if ($earnedPoints > 0) {
+                    $user->increment('points', $earnedPoints);
+                }
+
+                $holdTransaction = Transaction::where('session_id', $lockedSession->id)
+                    ->where('invoice_number', 'HOLD-' . $lockedSession->id)
+                    ->where('status', 'pending')
+                    ->lockForUpdate()
+                    ->firstOrFail();
+                $paidAt = now();
+
+                $holdTransaction->update([
+                    'invoice_number' => 'INV-' . $lockedSession->id . '-' . $paidAt->format('YmdHis'),
+                    'amount' => $totalCost,
+                    'description' => 'Pembayaran dari saldo yang ditahan saat sesi dimulai.',
+                    'status' => 'success',
+                    'paid_at' => $paidAt,
+                ]);
+
+                if ($refund > 0) {
+                    Transaction::create([
+                        'id_user' => $user->id_user,
+                        'session_id' => $lockedSession->id,
+                        'invoice_number' => 'REFUND-' . $lockedSession->id,
+                        'payment_method' => 'e-wallet',
+                        'amount' => $refund,
+                        'type' => 'refund',
+                        'description' => 'Pengembalian sisa dana reservasi charging.',
+                        'status' => 'success',
+                        'paid_at' => $paidAt,
+                    ]);
+                }
+            }
+
+            return [
+                'session' => $lockedSession,
+                'newly_completed' => true,
+                'prepaid' => $prepaid,
+                'earned_points' => $earnedPoints,
+            ];
+        });
+
+        $session = $result['session'];
+        if ($result['newly_completed'] && $session->user) {
             try {
-                $session->user->notify(
-                new ChargingFinishedNotification($session)
-        );
-    } catch (\Exception $e) {
-        report($e);
-    }
-}
+                $session->user->notify(new ChargingFinishedNotification($session));
+            } catch (\Exception $e) {
+                report($e);
+            }
+
+            if ($result['prepaid'] && $session->user->email) {
+                try {
+                    Mail::to($session->user->email)->send(new SendChargingInvoiceMail($session));
+                } catch (\Exception $e) {
+                    report($e);
+                }
+            }
         }
 
-        /*
-         * Setelah selesai langsung ke halaman pembayaran.
-         */
+        if ($result['prepaid'] || $session->status === 'paid') {
+            return redirect()
+                ->route('charging.invoice', $session->id)
+                ->with('success', 'Pengisian selesai. Biaya aktual telah dipotong dan sisa dana reservasi dikembalikan.');
+        }
+
         return redirect()
-            ->route(
-                'charging.payment.view',
-                $session->id
-            )
-            ->with(
-                'success',
-                'Pengisian daya dihentikan. Silakan lanjutkan pembayaran.'
-            );
+            ->route('charging.payment.view', $session->id)
+            ->with('success', 'Pengisian daya dihentikan. Silakan lanjutkan pembayaran.');
     }
 
     /**

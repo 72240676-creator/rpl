@@ -29,6 +29,7 @@
     $vehicleModel = $vehicle ? ($vehicle->merek . ' ' . $vehicle->model) : 'Kendaraan Listrik';
     $vehiclePlate = $vehicle->nomor_polisi ?? '-';
     $userSaldo = (float) (auth()->user()->saldo ?? 0);
+    $reservedAmount = (float) ($session->reserved_amount ?? 0);
 
     $initialBatterySoc = (int) (
         $session->start_battery_soc
@@ -702,12 +703,20 @@
             </div>
 
             <div class="saldo-info">
-                <span style="font-size: 12px; color: #64748b; font-weight: 600;">Saldo E-Wallet Anda:</span>
+                <span style="font-size: 12px; color: #64748b; font-weight: 600;">Saldo tersedia:</span>
                 <div style="font-size: 20px; font-weight: 800; color: #0f172a;">
                     Rp {{ number_format($userSaldo, 0, ',', '.') }}
                 </div>
+                @if($reservedAmount > 0)
+                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                        Dana ditahan: Rp {{ number_format($reservedAmount, 0, ',', '.') }}
+                    </div>
+                    <div style="font-size: 11px; color: #64748b;">
+                        Sisa batas sesi: Rp <span id="remainingBudget">{{ number_format(max(0, $reservedAmount - (float) $session->total_cost), 0, ',', '.') }}</span>
+                    </div>
+                @endif
                 <div id="saldoWarnText" style="font-size: 11px; color: #059669; font-weight: 600;">
-                    ✓ Saldo aman untuk sesi pengisian ini
+                    ✓ Dana reservasi melindungi sesi ini
                 </div>
             </div>
         </div>
@@ -815,9 +824,15 @@
                 </div>
             </div>
 
-            <a href="{{ route('charging.payment.view', $session->id) }}" style="display: block; width: 100%; box-sizing: border-box; text-align: center; background: #10b981; color: white; padding: 16px; border-radius: 14px; font-size: 16px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
-                💳 Bayar Sekarang
-            </a>
+            @if($session->status === 'paid')
+                <a href="{{ route('charging.invoice', $session->id) }}" style="display: block; width: 100%; box-sizing: border-box; text-align: center; background: #10b981; color: white; padding: 16px; border-radius: 14px; font-size: 16px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
+                    Lihat Invoice
+                </a>
+            @else
+                <a href="{{ route('charging.payment.view', $session->id) }}" style="display: block; width: 100%; box-sizing: border-box; text-align: center; background: #10b981; color: white; padding: 16px; border-radius: 14px; font-size: 16px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
+                    Bayar Sekarang
+                </a>
+            @endif
         </div>
 
     @endif
@@ -830,7 +845,7 @@
     // Konfigurasi Parameter
     const maxPowerKw = {{ $chargingPowerKw }};
     const pricePerKwh = {{ (float) $tariffPerKwh }};
-    const userSaldo = {{ $userSaldo }};
+    const reservedAmount = {{ $reservedAmount }};
     const startTimeIso = "{{ optional($session->start_time)->toIso8601String() }}";
     const startTime = startTimeIso ? new Date(startTimeIso) : new Date();
 
@@ -891,7 +906,15 @@
         // 4. Perhitungan kWh Terisi & Biaya Berjalan
         const hoursFraction = 1 / 3600 * speedMultiplier;
         totalKwh += (liveKw * hoursFraction);
+        const maxReservedKwh = reservedAmount > 0 && pricePerKwh > 0
+            ? reservedAmount / pricePerKwh
+            : Number.POSITIVE_INFINITY;
+        const reachedBudget = totalKwh >= maxReservedKwh;
+        totalKwh = Math.min(totalKwh, maxReservedKwh);
         totalCost = Math.round(totalKwh * pricePerKwh);
+        if (reservedAmount > 0) {
+            totalCost = Math.min(totalCost, reservedAmount);
+        }
 
         document.getElementById('liveKwhVal').innerText = totalKwh.toFixed(3);
         document.getElementById('liveCostVal').innerText = totalCost.toLocaleString('id-ID');
@@ -899,6 +922,10 @@
         // Input form tersembunyi
         document.getElementById('formEnergyKwh').value = totalKwh.toFixed(3);
         document.getElementById('formTotalCost').value = totalCost;
+        const remainingBudget = document.getElementById('remainingBudget');
+        if (remainingBudget) {
+            remainingBudget.innerText = Math.max(0, reservedAmount - totalCost).toLocaleString('id-ID');
+        }
 
         // 5. Update Persentase Baterai (SoC) & Radial Gauge
         currentBatterySoc = Math.min(100, initialBatterySoc + ((totalKwh / batteryCapacity) * 100));
@@ -929,9 +956,16 @@
 
         // 6. Proteksi Saldo
         const saldoWarnText = document.getElementById('saldoWarnText');
-        if (userSaldo > 0 && totalCost >= userSaldo * 0.9) {
-            saldoWarnText.innerText = '⚠️ Biaya mendekati sisa saldo e-wallet Anda!';
+        if (reservedAmount > 0 && totalCost >= reservedAmount * 0.9) {
+            saldoWarnText.innerText = 'Biaya mendekati batas dana sesi!';
             saldoWarnText.style.color = '#d97706';
+        }
+
+        if (reachedBudget && reservedAmount > 0) {
+            saldoWarnText.innerText = 'Batas dana tercapai. Sesi dihentikan otomatis.';
+            saldoWarnText.style.color = '#dc2626';
+            clearInterval(telemetryInterval);
+            document.getElementById('realStopForm').submit();
         }
     }
 

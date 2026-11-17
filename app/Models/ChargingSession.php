@@ -16,6 +16,7 @@ class ChargingSession extends Model
         'end_time',
         'energy_consumed_kwh',
         'total_cost',
+        'reserved_amount',
         'status',
     ];
 
@@ -24,6 +25,7 @@ class ChargingSession extends Model
         'end_time'            => 'datetime',
         'energy_consumed_kwh' => 'decimal:3',
         'total_cost'          => 'decimal:2',
+        'reserved_amount'     => 'decimal:2',
     ];
 
     public function user()

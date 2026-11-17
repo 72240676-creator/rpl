@@ -71,6 +71,7 @@ class CustomerDashboardTest extends TestCase
     public function test_selected_vehicle_is_used_when_charging_starts(): void
     {
         $user = $this->createCustomer();
+        $user->update(['saldo' => 50000]);
         $firstVehicle = $this->createVehicle($user, 'Hyundai', 'Ioniq 5', 'AB 1234 EV');
         $selectedVehicle = $this->createVehicle($user, 'Wuling', 'Air EV', 'AB 4321 EV');
         $station = $this->createStation('SPKLU Kendaraan Terpilih');
@@ -89,11 +90,13 @@ class CustomerDashboardTest extends TestCase
 
         $this->get(route('scan.charge.show', $charger->id_charger))
             ->assertOk()
+            ->assertSee('Batas dana sesi')
             ->assertSee('value="' . $selectedVehicle->id_vehicle . '" selected', false);
 
         $response = $this->post(route('charging.start'), [
             'charger_id' => $charger->id_charger,
             'vehicle_id' => $selectedVehicle->id_vehicle,
+            'reserved_amount' => 25000,
         ]);
 
         $session = ChargingSession::where('user_id', $user->id_user)->firstOrFail();
@@ -101,6 +104,8 @@ class CustomerDashboardTest extends TestCase
         $response->assertRedirect(route('charging.session', $session->id));
         $this->assertSame($selectedVehicle->id_vehicle, $session->vehicle_id);
         $this->assertNotSame($firstVehicle->id_vehicle, $session->vehicle_id);
+        $this->assertSame(25000.0, (float) $user->fresh()->saldo);
+        $this->assertSame(25000.0, (float) $session->reserved_amount);
     }
 
     public function test_customer_cannot_select_another_users_vehicle(): void
