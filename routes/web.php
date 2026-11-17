@@ -10,6 +10,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ChargingController;
+use App\Http\Controllers\LaporanPenggunaController;
 use App\Http\Controllers\StationController;
 use App\Http\Controllers\OperatorDashboardController;
 use App\Http\Controllers\AdminDashboardController;
@@ -64,13 +65,14 @@ Route::middleware('guest')->group(function () {
 // ============================================================
 
 Route::middleware('auth')->group(function () {
-
+    
     // ========================================================
     // DASHBOARD
     // ========================================================
 
     Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
         $user = Auth::user();
+
         $availableChargers = static fn ($query) => $query
             ->where('status', 'tersedia')
             ->where('is_online', true);
@@ -85,9 +87,20 @@ Route::middleware('auth')->group(function () {
             ->orderBy('nama_lokasi')
             ->get();
 
+        // Daftar lokasi untuk formulir laporan pengguna
+        $reportLocations = Location::query()
+            ->where('status', 'aktif')
+            ->with(['chargers' => fn ($query) => $query
+                ->select('id_charger', 'id_location', 'device_number', 'connector_type')])
+            ->orderBy('nama_lokasi')
+            ->get();
+
         $vehicles = $user->vehicles()->orderBy('id_vehicle')->get();
-        $vehicle = $vehicles->firstWhere('id_vehicle', $request->session()->get('selected_vehicle_id'))
-            ?? $vehicles->first();
+
+        $vehicle = $vehicles->firstWhere(
+            'id_vehicle',
+            $request->session()->get('selected_vehicle_id')
+        ) ?? $vehicles->first();
 
         if ($vehicle) {
             $request->session()->put('selected_vehicle_id', $vehicle->id_vehicle);
@@ -98,8 +111,15 @@ Route::middleware('auth')->group(function () {
             ->latest('start_time')
             ->first();
 
-        return view('dashboard', compact('dashboardLocations', 'vehicles', 'vehicle', 'ongoingSession'));
+        return view('dashboard', compact(
+            'dashboardLocations',
+            'vehicles',
+            'vehicle',
+            'ongoingSession',
+            'reportLocations'
+        ));
     })->name('dashboard');
+
 
 
     // ========================================================
@@ -162,7 +182,14 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/reports/inspections', [OperatorDashboardController::class, 'inspectionReports'])
         ->name('reports.inspections');
-    });
+
+        // Laporan Pengguna
+        Route::get('/reports/users', [OperatorDashboardController::class, 'userReports'])
+            ->name('reports.users');
+
+        Route::put('/reports/users/{id_laporan}/status', [OperatorDashboardController::class, 'updateUserReportStatus'])
+            ->name('reports.users.status.update');
+            });
 
 
     // ========================================================
@@ -254,4 +281,10 @@ Route::middleware('auth')->group(function () {
             )->name('reports.index');
 
         });
-});
+
+    // ===================================================
+    // LAPORAN PENGGUNA
+    // ===================================================
+    Route::post('/laporan-pengguna', [LaporanPenggunaController::class, 'store'])
+        ->name('laporan-pengguna.store');
+    });

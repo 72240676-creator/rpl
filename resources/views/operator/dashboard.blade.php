@@ -192,7 +192,7 @@
                     <span class="destination-metric" data-live-stat="attention_chargers">{{ $stats['attention_chargers'] }} laporan terbuka</span>
                     <span class="destination-action">Tinjau laporan <span aria-hidden="true">→</span></span>
                 </div>
-            </a>
+            </a>         
         </div>
     </section>
 </div>

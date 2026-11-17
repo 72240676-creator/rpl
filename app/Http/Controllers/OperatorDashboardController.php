@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Charger;
 use App\Models\ChargingSession;
 use App\Models\Location;
+use App\Models\LaporanPengguna;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -84,9 +85,43 @@ class OperatorDashboardController extends Controller
             ->where('needs_inspection', true)
             ->latest('inspection_reported_at')
             ->get();
+
+        $userReports = LaporanPengguna::with(['user', 'location', 'charger'])
+            ->latest()
+            ->get();
+
         $stats = $this->stats();
 
-        return view('operator.reports.inspections', compact('chargers', 'stats'));
+        return view('operator.reports.inspections', compact(
+            'chargers',
+            'userReports',
+            'stats'
+        ));
+    }
+
+
+    public function userReports(): View
+    {
+        $reports = LaporanPengguna::with(['user', 'location', 'charger'])
+            ->latest()
+            ->get();
+
+        return view('operator.reports.users', compact('reports'));
+    }
+
+    public function updateUserReportStatus(Request $request, int $id_laporan)
+    {
+        $validated = $request->validate([
+            'status' => ['required', 'in:menunggu,diproses,selesai'],
+        ]);
+
+        $report = LaporanPengguna::findOrFail($id_laporan);
+
+        $report->update([
+            'status' => $validated['status'],
+        ]);
+
+        return back()->with('success', 'Status laporan berhasil diperbarui.');
     }
 
     private function stats(): array

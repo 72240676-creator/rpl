@@ -115,6 +115,94 @@
                 </div>
             @endforelse
         </div>
+        </section>
+
+    {{-- LAPORAN DARI PENGGUNA --}}
+    <section class="report-panel" style="margin-top:24px;" aria-labelledby="user-report-title">
+        <header class="panel-heading">
+            <div>
+                <h2 id="user-report-title">Laporan Keluhan Pengguna</h2>
+                <p>Keluhan SPKLU yang dikirim oleh pelanggan.</p>
+            </div>
+            <span class="report-count">
+                {{ $userReports->where('status', '!=', 'selesai')->count() }} laporan terbuka
+            </span>
+        </header>
+
+        <div class="report-list">
+            @forelse ($userReports as $report)
+                <article class="report-item">
+                    <div class="report-icon" aria-hidden="true">📢</div>
+
+                    <div class="report-main">
+                        <div class="report-title">
+                            {{ $report->jenis_masalah }}
+                        </div>
+
+                        <div class="report-location">
+                            {{ $report->location->nama_lokasi ?? 'Lokasi tidak tersedia' }}
+                            · Charger:
+                            {{ $report->charger->device_number ?? 'Tidak disebutkan' }}
+                        </div>
+
+                        <div class="report-meta">
+                            Pelapor: {{ $report->user->nama ?? 'Tidak diketahui' }}
+                            · {{ $report->created_at?->timezone('Asia/Jakarta')->format('d M Y, H:i') }} WIB
+                        </div>
+
+                        <div class="report-note">
+                            {{ $report->deskripsi }}
+                        </div>
+
+                        @if ($report->foto)
+                            <div style="margin-top:10px;">
+                                <a href="{{ asset('storage/' . $report->foto) }}" target="_blank">
+                                    <img
+                                        src="{{ asset('storage/' . $report->foto) }}"
+                                        alt="Foto bukti laporan"
+                                        style="max-width:180px;border-radius:10px;"
+                                    >
+                                </a>
+                            </div>
+                        @endif
+                    </div>
+
+                    <div class="report-actions">
+                        <form
+                            action="{{ route('operator.reports.users.status.update', $report->id_laporan) }}"
+                            method="POST"
+                            class="report-form"
+                        >
+                            @csrf
+                            @method('PUT')
+
+                            <label for="status-{{ $report->id_laporan }}">Status laporan</label>
+
+                            <select
+                                name="status"
+                                id="status-{{ $report->id_laporan }}"
+                                style="padding:8px;border:1px solid #cbd5e1;border-radius:8px;"
+                            >
+                                <option value="menunggu" @selected($report->status === 'menunggu')>Menunggu</option>
+                                <option value="diproses" @selected($report->status === 'diproses')>Diproses</option>
+                                <option value="selesai" @selected($report->status === 'selesai')>Selesai</option>
+                            </select>
+
+                            <button type="submit">Simpan Status</button>
+                        </form>
+                    </div>
+                </article>
+            @empty
+                <div class="empty-state">
+                    <span class="empty-icon" aria-hidden="true">✓</span>
+                    <strong>Belum ada laporan pengguna</strong>
+                    <div style="margin-top:5px;font-size:12px;">
+                        Laporan pelanggan akan muncul di sini.
+                    </div>
+                </div>
+            @endforelse
+        </div>
     </section>
+
 </div>
 @endsection

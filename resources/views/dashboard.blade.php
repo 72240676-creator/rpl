@@ -9,7 +9,136 @@
     $visibleBalance = 'Rp ' . number_format($user->saldo ?? 0, 0, ',', '.');
 @endphp
 
+
+
 <style>
+/* ===== BANTUAN & SARAN ===== */
+.feedback-fab {
+    position: fixed;
+    right: 28px;
+    bottom: 25px;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 14px 20px;
+    border: 0;
+    border-radius: 999px;
+    background: #059669;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 750;
+    box-shadow: 0 8px 25px rgba(5, 150, 105, .28);
+    cursor: pointer;
+}
+
+.feedback-fab:hover {
+    background: #047857;
+}
+
+.feedback-panel {
+    position: fixed;
+    right: 28px;
+    bottom: 90px;
+    z-index: 1001;
+    width: min(390px, calc(100vw - 32px));
+    max-height: min(620px, calc(100vh - 120px));
+    overflow-y: auto;
+    padding: 22px;
+    border: 1px solid #e5ebf2;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 15px 50px rgba(15, 23, 42, .18);
+}
+
+.feedback-panel[hidden] {
+    display: none;
+}
+
+.feedback-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 17px;
+}
+
+.feedback-header h3 {
+    margin: 0;
+    color: #172b4d;
+    font-size: 17px;
+}
+
+.feedback-close {
+    border: 0;
+    background: transparent;
+    color: #64748b;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.feedback-field {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 13px;
+}
+
+.feedback-field label {
+    color: #334e68;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.feedback-field input,
+.feedback-field select,
+.feedback-field textarea {
+    width: 100%;
+    padding: 10px 11px;
+    border: 1px solid #cbd5e1;
+    border-radius: 9px;
+    background: #fff;
+    color: #172b4d;
+    font: inherit;
+    font-size: 12px;
+}
+
+.feedback-field textarea {
+    min-height: 95px;
+    resize: vertical;
+}
+
+.feedback-submit {
+    width: 100%;
+    min-height: 42px;
+    border: 0;
+    border-radius: 9px;
+    background: #059669;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 750;
+    cursor: pointer;
+}
+
+.feedback-submit:hover {
+    background: #047857;
+}
+
+.feedback-error {
+    color: #dc2626;
+    font-size: 11px;
+}
+
+@media (max-width: 600px) {
+    .feedback-fab {
+        right: 16px;
+        bottom: 16px;
+    }
+
+    .feedback-panel {
+        right: 16px;
+        bottom: 80px;
+    }
+}
+
     .customer-dashboard {
         --ink: #172b4d;
         --muted: #64748b;
@@ -395,6 +524,90 @@
             <a class="dashboard-action" href="{{ route('locations.index') }}">🗺️ Cari SPKLU</a>
             <a class="dashboard-action" href="{{ route('charging.history') }}">📋 Riwayat dan tagihan</a>
         </nav>
+        {{-- Tombol Bantuan & Saran --}}
+<button type="button" class="feedback-fab" id="feedbackOpen">
+    💬 Bantuan &amp; Saran
+</button>
+
+{{-- Formulir Bantuan & Saran --}}
+<div class="feedback-panel" id="feedbackPanel" hidden>
+    <div class="feedback-header">
+        <h3>Laporkan Masalah SPKLU</h3>
+        <button type="button" class="feedback-close" id="feedbackClose" aria-label="Tutup">&times;</button>
+    </div>
+
+    <form action="{{ route('laporan-pengguna.store') }}" method="POST" enctype="multipart/form-data">
+        @csrf
+
+        <div class="feedback-field">
+            <label for="reportLocation">Lokasi SPKLU</label>
+            <select name="id_location" id="reportLocation" required>
+                <option value="">Pilih lokasi SPKLU</option>
+                @foreach ($reportLocations as $location)
+                    <option value="{{ $location->id_location }}" @selected(old('id_location') == $location->id_location)>
+                        {{ $location->nama_lokasi }}
+                    </option>
+                @endforeach
+            </select>
+            @error('id_location')
+                <span class="feedback-error">{{ $message }}</span>
+            @enderror
+        </div>
+
+        <div class="feedback-field">
+            <label for="reportCharger">Nomor charger (opsional)</label>
+            <select name="id_charger" id="reportCharger">
+                <option value="">Pilih charger jika diketahui</option>
+                @foreach ($reportLocations as $location)
+                    @foreach ($location->chargers as $charger)
+                        <option
+                            value="{{ $charger->id_charger }}"
+                            data-location="{{ $location->id_location }}"
+                            @selected(old('id_charger') == $charger->id_charger)>
+                            {{ $charger->device_number }} - {{ $charger->connector_type }}
+                        </option>
+                    @endforeach
+                @endforeach
+            </select>
+            @error('id_charger')
+                <span class="feedback-error">{{ $message }}</span>
+            @enderror
+        </div>
+
+        <div class="feedback-field">
+            <label for="reportType">Jenis masalah</label>
+            <select name="jenis_masalah" id="reportType" required>
+                <option value="">Pilih jenis masalah</option>
+                <option value="Charger rusak" @selected(old('jenis_masalah') == 'Charger rusak')>Charger rusak</option>
+                <option value="Charger tidak tersedia" @selected(old('jenis_masalah') == 'Charger tidak tersedia')>Charger tidak tersedia</option>
+                <option value="Pembayaran bermasalah" @selected(old('jenis_masalah') == 'Pembayaran bermasalah')>Pembayaran bermasalah</option>
+                <option value="Fasilitas lokasi" @selected(old('jenis_masalah') == 'Fasilitas lokasi')>Fasilitas lokasi</option>
+                <option value="Lainnya" @selected(old('jenis_masalah') == 'Lainnya')>Lainnya</option>
+            </select>
+            @error('jenis_masalah')
+                <span class="feedback-error">{{ $message }}</span>
+            @enderror
+        </div>
+
+        <div class="feedback-field">
+            <label for="reportDescription">Deskripsi masalah</label>
+            <textarea name="deskripsi" id="reportDescription" placeholder="Ceritakan masalah yang kamu alami..." required>{{ old('deskripsi') }}</textarea>
+            @error('deskripsi')
+                <span class="feedback-error">{{ $message }}</span>
+            @enderror
+        </div>
+
+        <div class="feedback-field">
+            <label for="reportPhoto">Foto bukti (opsional)</label>
+            <input type="file" name="foto" id="reportPhoto" accept=".jpg,.jpeg,.png">
+            @error('foto')
+                <span class="feedback-error">{{ $message }}</span>
+            @enderror
+        </div>
+
+        <button type="submit" class="feedback-submit">Kirim Laporan</button>
+    </form>
+</div>
     </div>
 </div>
 
@@ -486,5 +699,43 @@
             }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 });
         });
     })();
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const openButton = document.getElementById('feedbackOpen');
+    const closeButton = document.getElementById('feedbackClose');
+    const panel = document.getElementById('feedbackPanel');
+    const locationSelect = document.getElementById('reportLocation');
+    const chargerSelect = document.getElementById('reportCharger');
+
+    if (!openButton || !closeButton || !panel) return;
+
+    openButton.addEventListener('click', function () {
+        panel.hidden = false;
+    });
+
+    closeButton.addEventListener('click', function () {
+        panel.hidden = true;
+    });
+
+    if (locationSelect && chargerSelect) {
+        locationSelect.addEventListener('change', function () {
+            const selectedLocation = this.value;
+
+            Array.from(chargerSelect.options).forEach(function (option) {
+                if (!option.value) return;
+
+                option.hidden = option.dataset.location !== selectedLocation;
+            });
+
+            chargerSelect.value = '';
+        });
+    }
+
+    @if ($errors->any())
+        panel.hidden = false;
+    @endif
+});
 </script>
 @endsection
