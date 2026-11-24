@@ -73,6 +73,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
         $user = Auth::user();
 
+        if ($user->peran === 'admin') {
+            return redirect()->route('admin.dashboard');
+        }
+
+        if ($user->peran === 'operator') {
+            return redirect()->route('operator.dashboard');
+        }
+
         $availableChargers = static fn ($query) => $query
             ->where('status', 'tersedia')
             ->where('is_online', true);
@@ -90,6 +98,7 @@ Route::middleware('auth')->group(function () {
         // Daftar lokasi untuk formulir laporan pengguna
         $reportLocations = Location::query()
             ->where('status', 'aktif')
+            ->whereHas('chargers', $availableChargers)
             ->with(['chargers' => fn ($query) => $query
                 ->select('id_charger', 'id_location', 'device_number', 'connector_type')])
             ->orderBy('nama_lokasi')
@@ -206,6 +215,7 @@ Route::middleware('auth')->group(function () {
     // ========================================================
 
     Route::get('/scan-charge', [ChargingController::class, 'scan'])->name('scan.charge');
+    Route::post('/scan-charge/lookup', [ChargingController::class, 'lookup'])->name('scan.charge.lookup');
     Route::post('/scan-charge/process', [ChargingController::class, 'processScan'])->name('scan.charge.process');
     Route::get('/scan-charge/{charger}', [ChargingController::class, 'show'])->name('scan.charge.show');
 

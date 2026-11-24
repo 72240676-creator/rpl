@@ -13,7 +13,40 @@ class ChargingController extends Controller
      */
     public function scan()
     {
-        return view('scan-charge');
+        // Ambil unit charger yang aktif dan siap pakai untuk opsi Quick Select
+        $availableChargers = Charger::with('location')
+            ->where('is_online', true)
+            ->where('status', 'tersedia')
+            ->orderByDesc('max_power_kw')
+            ->limit(4)
+            ->get();
+
+        return view('scan-charge', compact('availableChargers'));
+    }
+
+    /**
+     * Cari charger berdasarkan kode/nomor unit (Input Manual).
+     */
+    public function lookup(Request $request)
+    {
+        $request->validate([
+            'charger_code' => ['required', 'string'],
+        ], [
+            'charger_code.required' => 'Masukkan kode atau nomor unit charger.',
+        ]);
+
+        $code = trim($request->charger_code);
+
+        // Cari berdasarkan device_number atau id_charger
+        $charger = Charger::where('device_number', 'LIKE', $code)
+            ->orWhere('id_charger', $code)
+            ->first();
+
+        if (!$charger) {
+            return back()->with('error', "Charger dengan kode '{$code}' tidak ditemukan atau sedang tidak aktif.")->withInput();
+        }
+
+        return redirect()->route('scan.charge.show', $charger->id_charger);
     }
 
     /**
