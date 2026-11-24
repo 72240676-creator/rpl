@@ -1,25 +1,23 @@
+
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::statement("
-            ALTER TABLE users
-            MODIFY peran ENUM('admin', 'operator', 'pengemudi')
-            NOT NULL DEFAULT 'pengemudi'
-        ");
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('peran')
+                ->default('pengemudi')
+                ->change();
+        });
     }
 
     public function down(): void
     {
-        DB::statement("
-            ALTER TABLE users
-            MODIFY peran ENUM('admin', 'pengemudi')
-            NOT NULL DEFAULT 'pengemudi'
-        ");
+        // Tidak menghapus kolom peran agar data pengguna tetap aman.
     }
 };

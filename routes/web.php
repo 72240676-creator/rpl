@@ -1,3 +1,4 @@
+
 <?php
 
 use Illuminate\Support\Facades\Route;
@@ -20,6 +21,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Controllers\PointController;
 use App\Models\Location;
+
 
 // ============================================================
 // HALAMAN UTAMA
@@ -50,13 +52,16 @@ Route::post('/logout', function () {
 
 Route::middleware('guest')->group(function () {
 
-    // Login
-    Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
+    Route::get('/login', [AuthController::class, 'showLoginForm'])
+        ->name('login');
+
     Route::post('/login', [AuthController::class, 'authenticate']);
 
-    // Register
-    Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
+    Route::get('/register', [AuthController::class, 'showRegisterForm'])
+        ->name('register');
+
     Route::post('/register', [AuthController::class, 'register']);
+
 });
 
 
@@ -65,12 +70,14 @@ Route::middleware('guest')->group(function () {
 // ============================================================
 
 Route::middleware('auth')->group(function () {
-    
+
+
     // ========================================================
-    // DASHBOARD
+    // DASHBOARD USER
     // ========================================================
 
     Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
+
         $user = Auth::user();
 
         $availableChargers = static fn ($query) => $query
@@ -80,22 +87,40 @@ Route::middleware('auth')->group(function () {
         $dashboardLocations = Location::query()
             ->where('status', 'aktif')
             ->whereHas('chargers', $availableChargers)
-            ->withCount(['chargers as available_chargers_count' => $availableChargers])
-            ->with(['chargers' => static fn ($query) => $availableChargers($query)
-                ->select('id_charger', 'id_location', 'connector_type', 'max_power_kw', 'price_per_kwh')
-                ->orderByDesc('max_power_kw')])
+            ->withCount([
+                'chargers as available_chargers_count' => $availableChargers
+            ])
+            ->with([
+                'chargers' => static fn ($query) => $availableChargers($query)
+                    ->select(
+                        'id_charger',
+                        'id_location',
+                        'connector_type',
+                        'max_power_kw',
+                        'price_per_kwh'
+                    )
+                    ->orderByDesc('max_power_kw')
+            ])
             ->orderBy('nama_lokasi')
             ->get();
 
         // Daftar lokasi untuk formulir laporan pengguna
         $reportLocations = Location::query()
             ->where('status', 'aktif')
-            ->with(['chargers' => fn ($query) => $query
-                ->select('id_charger', 'id_location', 'device_number', 'connector_type')])
+            ->with([
+                'chargers' => fn ($query) => $query->select(
+                    'id_charger',
+                    'id_location',
+                    'device_number',
+                    'connector_type'
+                )
+            ])
             ->orderBy('nama_lokasi')
             ->get();
 
-        $vehicles = $user->vehicles()->orderBy('id_vehicle')->get();
+        $vehicles = $user->vehicles()
+            ->orderBy('id_vehicle')
+            ->get();
 
         $vehicle = $vehicles->firstWhere(
             'id_vehicle',
@@ -103,7 +128,10 @@ Route::middleware('auth')->group(function () {
         ) ?? $vehicles->first();
 
         if ($vehicle) {
-            $request->session()->put('selected_vehicle_id', $vehicle->id_vehicle);
+            $request->session()->put(
+                'selected_vehicle_id',
+                $vehicle->id_vehicle
+            );
         }
 
         $ongoingSession = ChargingSession::where('user_id', $user->id_user)
@@ -118,173 +146,273 @@ Route::middleware('auth')->group(function () {
             'ongoingSession',
             'reportLocations'
         ));
-    })->name('dashboard');
 
+    })->name('dashboard');
 
 
     // ========================================================
     // E-WALLET / TOP UP
     // ========================================================
 
-    Route::get('/topup', [WalletController::class, 'index'])->name('topup.index');
-    Route::post('/topup', [WalletController::class, 'store'])->name('topup.store');
+    Route::get('/topup', [WalletController::class, 'index'])
+        ->name('topup.index');
+
+    Route::post('/topup', [WalletController::class, 'store'])
+        ->name('topup.store');
+
 
     // ========================================================
     // E-POIN / REWARD
     // ========================================================
-    Route::get('/points', [PointController::class, 'index'])->name('points.index');
-    Route::get('/tukar-poin', [PointController::class, 'index'])->name('poin.index');
-    Route::post('/points/redeem', [PointController::class, 'redeem'])->name('points.redeem');
-    Route::post('/tukar-poin', [PointController::class, 'redeem'])->name('poin.redeem');
+
+    Route::get('/points', [PointController::class, 'index'])
+        ->name('points.index');
+
+    Route::get('/tukar-poin', [PointController::class, 'index'])
+        ->name('poin.index');
+
+    Route::post('/points/redeem', [PointController::class, 'redeem'])
+        ->name('points.redeem');
+
+    Route::post('/tukar-poin', [PointController::class, 'redeem'])
+        ->name('poin.redeem');
+
 
     // ========================================================
     // PROFILE & KENDARAAN
     // ========================================================
 
     Route::get('/profile', [ProfileController::class, 'index']);
+
     Route::post('/profile/vehicle', [ProfileController::class, 'storeVehicle']);
-    Route::post('/profile/vehicle/select', [ProfileController::class, 'selectVehicle'])->name('vehicles.select');
-    Route::put('/profile/update', [ProfileController::class, 'updateProfile'])->name('profile.update');
-    Route::post('/vehicles/{vehicle}/discharge', [ProfileController::class, 'discharge'])->name('vehicles.discharge');
+
+    Route::post('/profile/vehicle/select', [ProfileController::class, 'selectVehicle'])
+        ->name('vehicles.select');
+
+    Route::put('/profile/update', [ProfileController::class, 'updateProfile'])
+        ->name('profile.update');
+
+    Route::post('/vehicles/{vehicle}/discharge', [ProfileController::class, 'discharge'])
+        ->name('vehicles.discharge');
 
 
     // ========================================================
-    // LOKASI SPKLU
+    // LOKASI SPKLU USER
     // ========================================================
 
-    Route::get('/locations', [LocationController::class, 'index'])->name('locations.index');
+    Route::get('/locations', [LocationController::class, 'index'])
+        ->name('locations.index');
 
 
     // ========================================================
-    // OPERATOR LOCATION
+    // OPERATOR
     // ========================================================
 
-    Route::middleware('operator')->prefix('operator')->name('operator.')->group(function () {
-        Route::get('/dashboard', [OperatorDashboardController::class, 'index'])->name('dashboard');
-        Route::get('/dashboard/live', [OperatorDashboardController::class, 'live'])->name('dashboard.live');
-        Route::get('/activity', [OperatorDashboardController::class, 'activity'])->name('activity');
-        Route::put('/chargers/{id_charger}/inspection', [OperatorDashboardController::class, 'updateInspection'])->name('chargers.inspection.update');
-        Route::get('/stations', [StationController::class, 'index'])->name('stations.index');
-        Route::post('/stations', [StationController::class, 'store'])->name('stations.store');
-        Route::get('/stations/{id_location}/edit', [StationController::class, 'edit'])->name('stations.edit');
-        Route::put('/stations/{id_location}', [StationController::class, 'update'])->name('stations.update');
-        Route::delete('/stations/{id_location}', [StationController::class, 'destroy'])->name('stations.destroy');
-        Route::post('/stations/{id_location}/chargers', [StationController::class, 'storeCharger'])->name('chargers.store');
-        Route::delete('/chargers/{id_charger}', [StationController::class, 'destroyCharger'])->name('chargers.destroy');
-        Route::put('/chargers/{id_charger}/tariff', [StationController::class, 'updateChargerTariff'])->name('chargers.tariff.update');
+    Route::middleware('operator')
+        ->prefix('operator')
+        ->name('operator.')
+        ->group(function () {
 
-        Route::get('/locations', [LocationController::class, 'operatorIndex'])->name('locations');
-        Route::post('/locations', [LocationController::class, 'store'])->name('locations.store');
-        Route::put('/locations/{id}', [LocationController::class, 'update'])->name('locations.update');
+            // Dashboard Operator
+            Route::get('/dashboard', [OperatorDashboardController::class, 'index'])
+                ->name('dashboard');
 
-        Route::get('/chargers/{id_charger}/tariff', [OperatorDashboardController::class, 'editTariff'])
-        ->name('chargers.tariff.edit');
+            Route::get('/dashboard/live', [OperatorDashboardController::class, 'live'])
+                ->name('dashboard.live');
 
-        Route::get('/reports/inspections', [OperatorDashboardController::class, 'inspectionReports'])
-        ->name('reports.inspections');
 
-        // Laporan Pengguna
-        Route::get('/reports/users', [OperatorDashboardController::class, 'userReports'])
-            ->name('reports.users');
+            // Aktivitas Charging
+            Route::get('/activity', [OperatorDashboardController::class, 'activity'])
+                ->name('activity');
 
-        Route::put('/reports/users/{id_laporan}/status', [OperatorDashboardController::class, 'updateUserReportStatus'])
-            ->name('reports.users.status.update');
-            });
+
+            // Pemeriksaan Charger
+            Route::put('/chargers/{id_charger}/inspection',
+                [OperatorDashboardController::class, 'updateInspection'])
+                ->name('chargers.inspection.update');
+
+
+            // =================================================
+            // STASIUN
+            // =================================================
+
+            Route::get('/stations', [StationController::class, 'index'])
+                ->name('stations.index');
+
+            Route::post('/stations', [StationController::class, 'store'])
+                ->name('stations.store');
+
+            Route::get('/stations/{id_location}/edit', [StationController::class, 'edit'])
+                ->name('stations.edit');
+
+            Route::put('/stations/{id_location}', [StationController::class, 'update'])
+                ->name('stations.update');
+
+            Route::delete('/stations/{id_location}', [StationController::class, 'destroy'])
+                ->name('stations.destroy');
+
+
+            // Charger pada Stasiun
+            Route::post('/stations/{id_location}/chargers', [StationController::class, 'storeCharger'])
+                ->name('chargers.store');
+
+            Route::delete('/chargers/{id_charger}', [StationController::class, 'destroyCharger'])
+                ->name('chargers.destroy');
+
+
+            // Tarif Charger
+            Route::put('/chargers/{id_charger}/tariff', [StationController::class, 'updateChargerTariff'])
+                ->name('chargers.tariff.update');
+
+            Route::get('/chargers/{id_charger}/tariff', [OperatorDashboardController::class, 'editTariff'])
+                ->name('chargers.tariff.edit');
+
+
+            // =================================================
+            // LOKASI OPERATOR
+            // =================================================
+
+            Route::get('/locations', [LocationController::class, 'operatorIndex'])
+                ->name('locations');
+
+            Route::post('/locations', [LocationController::class, 'store'])
+                ->name('locations.store');
+
+            Route::put('/locations/{id}', [LocationController::class, 'update'])
+                ->name('locations.update');
+
+
+            // =================================================
+            // LAPORAN PEMERIKSAAN
+            // =================================================
+
+            Route::get('/reports/inspections', [OperatorDashboardController::class, 'inspectionReports'])
+                ->name('reports.inspections');
+
+
+            // =================================================
+            // LAPORAN PENGGUNA
+            // =================================================
+
+            Route::get('/reports/users',[OperatorDashboardController::class, 'userReports']
+            )->name('reports.users');
+
+            Route::post('/reports/users/{id_laporan}/forward',
+                [OperatorDashboardController::class, 'forwardUserReportToAdmin']
+            )->name('reports.users.forward');
+
+            Route::put('/reports/users/{id_laporan}/status',
+                [OperatorDashboardController::class, 'updateUserReportStatus']
+            )->name('reports.users.status.update');
+
+        });
 
 
     // ========================================================
     // NOTIFICATION
     // ========================================================
 
-    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
-    Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
-    Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
+    Route::get('/notifications', [NotificationController::class, 'index'])
+        ->name('notifications.index');
+
+    Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])
+        ->name('notifications.markAsRead');
+
+    Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])
+        ->name('notifications.markAllAsRead');
 
 
     // ========================================================
     // SCAN CHARGER
     // ========================================================
 
-    Route::get('/scan-charge', [ChargingController::class, 'scan'])->name('scan.charge');
-    Route::post('/scan-charge/process', [ChargingController::class, 'processScan'])->name('scan.charge.process');
-    Route::get('/scan-charge/{charger}', [ChargingController::class, 'show'])->name('scan.charge.show');
+    Route::get('/scan-charge', [ChargingController::class, 'scan'])
+        ->name('scan.charge');
 
+    Route::post('/scan-charge/process', [ChargingController::class, 'processScan'])
+        ->name('scan.charge.process');
+
+    Route::get('/scan-charge/{charger}', [ChargingController::class, 'show'])
+        ->name('scan.charge.show');
 
 
     // ========================================================
     // CHARGING SESSION
     // ========================================================
 
-    // Mulai charging
-    Route::post('/charging/start', [ChargingSessionController::class, 'start'])->name('charging.start');
+    Route::post('/charging/start', [ChargingSessionController::class, 'start'])
+        ->name('charging.start');
 
-    // Resume charging session
-    Route::post('/charging/session/{id}/resume', [ChargingSessionController::class, 'resume'])->name('charging.resume');
+    Route::post('/charging/session/{id}/resume', [ChargingSessionController::class, 'resume'])
+        ->name('charging.resume');
 
-    // Detail session charging
-    Route::get('/charging/session/{session}', [ChargingSessionController::class, 'show'])->name('charging.session');
+    Route::get('/charging/session/{session}', [ChargingSessionController::class, 'show'])
+        ->name('charging.session');
 
-    // Stop charging
-    Route::post('/charging/session/{session}/stop', [ChargingSessionController::class, 'stop'])->name('charging.stop');
+    Route::post('/charging/session/{session}/stop', [ChargingSessionController::class, 'stop'])
+        ->name('charging.stop');
 
 
     // ========================================================
     // PAYMENT
     // ========================================================
 
-    // Halaman pembayaran
-    Route::get('/charging/session/{session}/payment', [ChargingSessionController::class, 'paymentView'])->name('charging.payment.view');
+    Route::get('/charging/session/{session}/payment', [ChargingSessionController::class, 'paymentView'])
+        ->name('charging.payment.view');
 
-    // Proses pembayaran
-    Route::post('/charging/pay/{session}', [ChargingSessionController::class, 'pay'])->name('charging.pay');
+    Route::post('/charging/pay/{session}', [ChargingSessionController::class, 'pay'])
+        ->name('charging.pay');
 
 
     // ========================================================
     // RIWAYAT CHARGING
     // ========================================================
 
-    Route::get('/riwayat', [ChargingSessionController::class, 'history'])->name('charging.history');
+    Route::get('/riwayat', [ChargingSessionController::class, 'history'])
+        ->name('charging.history');
 
 
     // ========================================================
     // INVOICE
     // ========================================================
 
-    // Halaman invoice
-    Route::get('/charging/{session}/invoice', [InvoiceController::class, 'show'])->name('charging.invoice');
+    Route::get('/charging/{session}/invoice', [InvoiceController::class, 'show'])
+        ->name('charging.invoice');
 
-    // Download invoice PDF
-    Route::get('/charging/{session}/invoice/pdf', [InvoiceController::class, 'downloadPdf'])->name('charging.invoice.pdf');
+    Route::get('/charging/{session}/invoice/pdf', [InvoiceController::class, 'downloadPdf'])
+        ->name('charging.invoice.pdf');
 
 
-    // ============================================================
+    // ========================================================
     // ADMIN
-    // ============================================================
+    // ========================================================
 
     Route::middleware([AdminMiddleware::class])
         ->prefix('admin')
         ->name('admin.')
         ->group(function () {
 
-            // Dashboard khusus Admin
-            Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
-            Route::put('/chargers/{id_charger}/inspection', [AdminDashboardController::class, 'updateInspection'])->name('chargers.inspection.update');
+            // Dashboard Admin
+            Route::get('/dashboard', [AdminDashboardController::class, 'index'])
+                ->name('dashboard');
+
+            Route::put('/chargers/{id_charger}/inspection',
+                [AdminDashboardController::class, 'updateInspection'])
+                ->name('chargers.inspection.update');
 
 
-            // --------------------------------------------------
             // Laporan Transaksi & Pendapatan
-            // --------------------------------------------------
-
-            Route::get(
-                '/reports',
-                [ReportController::class, 'index']
-            )->name('reports.index');
+            Route::get('/reports', [ReportController::class, 'index'])
+                ->name('reports.index');
 
         });
 
-    // ===================================================
-    // LAPORAN PENGGUNA
-    // ===================================================
+
+    // ========================================================
+    // FORM LAPORAN PENGGUNA
+    // ========================================================
+
     Route::post('/laporan-pengguna', [LaporanPenggunaController::class, 'store'])
         ->name('laporan-pengguna.store');
-    });
+
+});

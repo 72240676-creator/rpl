@@ -22,6 +22,8 @@ class LaporanPengguna extends Model
         'deskripsi',
         'foto',
         'status',
+        'diteruskan_ke_admin',
+        'operator_id',
     ];
 
     public function user(): BelongsTo
@@ -38,4 +40,9 @@ class LaporanPengguna extends Model
     {
         return $this->belongsTo(Charger::class, 'id_charger', 'id_charger');
     }
+
+    public function operator(): BelongsTo
+{
+    return $this->belongsTo(User::class, 'operator_id', 'id_user');
+}
 }

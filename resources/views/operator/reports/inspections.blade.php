@@ -137,6 +137,16 @@
                     <div class="report-main">
                         <div class="report-title">
                             {{ $report->jenis_masalah }}
+
+                            @if ($report->diteruskan_ke_admin)
+                                <span style="padding:5px 9px;background:#dbeafe;color:#1d4ed8;border-radius:20px;font-size:10px;">
+                                    Sudah diteruskan ke Admin
+                                </span>
+                            @else
+                                <span style="padding:5px 9px;background:#fef3c7;color:#92400e;border-radius:20px;font-size:10px;">
+                                    Belum diteruskan
+                                </span>
+                            @endif
                         </div>
 
                         <div class="report-location">
@@ -168,6 +178,26 @@
                     </div>
 
                     <div class="report-actions">
+                        @if (!$report->diteruskan_ke_admin)
+                            <form
+                                action="{{ route('operator.reports.users.forward', $report->id_laporan) }}"
+                                method="POST"
+                                onsubmit="return confirm('Yakin ingin meneruskan laporan ini ke Admin?')"
+                            >
+                                @csrf
+
+                                <button
+                                    type="submit"
+                                    style="padding:10px 13px;background:#2563eb;color:white;border:0;border-radius:8px;font-weight:700;cursor:pointer;width:100%;"
+                                >
+                                    Kirim ke Admin
+                                </button>
+                            </form>
+                        @else
+                            <div style="padding:9px;background:#eff6ff;color:#1d4ed8;border-radius:8px;font-size:11px;font-weight:700;">
+                                ✓ Laporan sudah dikirim ke Admin
+                            </div>
+                        @endif
                         <form
                             action="{{ route('operator.reports.users.status.update', $report->id_laporan) }}"
                             method="POST"

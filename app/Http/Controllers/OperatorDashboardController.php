@@ -109,20 +109,44 @@ class OperatorDashboardController extends Controller
         return view('operator.reports.users', compact('reports'));
     }
 
-    public function updateUserReportStatus(Request $request, int $id_laporan)
+    
+    public function forwardUserReportToAdmin(int $id_laporan)
     {
-        $validated = $request->validate([
-            'status' => ['required', 'in:menunggu,diproses,selesai'],
-        ]);
-
         $report = LaporanPengguna::findOrFail($id_laporan);
 
+        if ($report->diteruskan_ke_admin) {
+            return back()->with(
+                'info',
+                'Laporan ini sudah diteruskan ke Admin.'
+            );
+        }
+
         $report->update([
-            'status' => $validated['status'],
+            'diteruskan_ke_admin' => true,
+            'operator_id' => auth()->user()->id_user,
         ]);
 
-        return back()->with('success', 'Status laporan berhasil diperbarui.');
+        return back()->with(
+            'success',
+            'Laporan berhasil diteruskan ke Admin.'
+        );
     }
+
+public function updateUserReportStatus(Request $request, int $id_laporan)
+{
+    $validated = $request->validate([
+        'status' => ['required', 'in:menunggu,diproses,selesai'],
+    ]);
+
+    $report = LaporanPengguna::findOrFail($id_laporan);
+
+    $report->update([
+        'status' => $validated['status'],
+    ]);
+
+    return back()->with('success', 'Status laporan berhasil diperbarui.');
+}
+
 
     private function stats(): array
     {
