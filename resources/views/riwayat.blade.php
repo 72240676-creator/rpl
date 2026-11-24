@@ -1,134 +1,267 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Riwayat Charging</title>
-    <style>
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            padding: 32px 20px 56px;
-            color: #172554;
-            background: #f1f5f9;
-            font-family: Inter, Arial, sans-serif;
+@extends('layouts.app')
+
+@section('title', 'Riwayat Pengisian Daya · EV Charge')
+
+@section('content')
+<style>
+    .history-page-wrap {
+        width: 100%;
+        max-width: 900px;
+        margin: 20px auto 50px;
+        padding: 0 16px;
+        box-sizing: border-box;
+    }
+
+    .history-nav-wrap {
+        margin-bottom: 20px;
+    }
+
+    .history-header {
+        margin-bottom: 26px;
+    }
+
+    .history-header h1 {
+        margin: 0 0 8px;
+        font-size: clamp(24px, 4vw, 30px);
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: -0.5px;
+    }
+
+    .history-header p {
+        margin: 0;
+        color: #64748b;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+    .history-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 20px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+        overflow: hidden;
+        margin-bottom: 22px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .history-card:hover {
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    .history-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+        padding: 18px 24px;
+        background: linear-gradient(115deg, #f0fdf4 0%, #ecfdf5 100%);
+        border-bottom: 1px solid #dcefe8;
+    }
+
+    .session-title-wrap {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        min-width: 0;
+    }
+
+    .session-bolt-icon {
+        display: grid;
+        flex: 0 0 42px;
+        width: 42px;
+        height: 42px;
+        place-items: center;
+        color: #059669;
+        background: #d1fae5;
+        border-radius: 12px;
+        font-size: 20px;
+    }
+
+    .session-title-wrap h2 {
+        margin: 0;
+        color: #0f172a;
+        font-size: 17px;
+        font-weight: 700;
+    }
+
+    .session-date-text {
+        margin-top: 3px;
+        color: #64748b;
+        font-size: 13px;
+    }
+
+    .status-badge-pill {
+        flex: 0 0 auto;
+        padding: 6px 14px;
+        color: #065f46;
+        background: #d1fae5;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+    }
+
+    .status-badge-pill.unpaid {
+        color: #9a3412;
+        background: #ffedd5;
+    }
+
+    .history-card-body {
+        padding: 22px 24px 24px;
+    }
+
+    .station-location-block {
+        margin-bottom: 18px;
+        color: #1e293b;
+        font-size: 15px;
+        font-weight: 700;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .station-location-block small {
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 500;
+    }
+
+    .history-grid-details {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .detail-item-box {
+        padding: 13px 16px;
+        background: #f8fafc;
+        border: 1px solid #f1f5f9;
+        border-radius: 12px;
+    }
+
+    .detail-item-label {
+        display: block;
+        margin-bottom: 5px;
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .detail-item-value {
+        color: #0f172a;
+        font-size: 14px;
+        font-weight: 700;
+        overflow-wrap: anywhere;
+    }
+
+    .history-cost-banner {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 18px 22px;
+        color: #ffffff;
+        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        border-radius: 14px;
+        box-shadow: 0 4px 14px rgba(5, 150, 105, 0.2);
+    }
+
+    .cost-banner-label {
+        font-size: 13px;
+        opacity: 0.95;
+        font-weight: 500;
+    }
+
+    .cost-banner-amount {
+        margin-top: 4px;
+        font-size: clamp(22px, 4vw, 26px);
+        font-weight: 800;
+        letter-spacing: -0.5px;
+    }
+
+    .history-payment-meta {
+        margin-top: 16px;
+        padding-top: 14px;
+        border-top: 1px dashed #e2e8f0;
+        color: #64748b;
+        font-size: 13px;
+        line-height: 1.8;
+    }
+
+    .invoice-action-link {
+        color: #059669;
+        font-weight: 700;
+        text-decoration: none;
+        transition: color 0.15s ease;
+    }
+
+    .invoice-action-link:hover {
+        color: #047857;
+        text-decoration: underline;
+    }
+
+    .empty-state-box {
+        padding: 56px 24px;
+        text-align: center;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 20px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+    }
+
+    .empty-state-icon {
+        font-size: 44px;
+        margin-bottom: 12px;
+    }
+
+    .empty-state-box h2 {
+        margin: 0 0 8px;
+        color: #0f172a;
+        font-size: 20px;
+        font-weight: 750;
+    }
+
+    .empty-state-box p {
+        margin: 0;
+        color: #64748b;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+    @media (max-width: 640px) {
+        .history-card-header {
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 16px;
         }
-        .container { max-width: 900px; margin: 0 auto; }
-        .history-heading { display: flex; justify-content: space-between; align-items: flex-end; gap: 18px; margin-bottom: 26px; }
-        .page-heading { margin: 0 0 8px; font-size: clamp(25px, 4vw, 32px); }
-        .intro { margin: 0; color: #64748b; line-height: 1.6; }
-        .card {
-            overflow: hidden;
-            margin-bottom: 18px;
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 18px;
-            box-shadow: 0 8px 24px rgba(15, 23, 42, .06);
+
+        .history-card-body {
+            padding: 16px;
         }
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 14px;
-            padding: 20px 24px;
-            background: linear-gradient(115deg, #ecfdf5, #f0fdfa);
-            border-bottom: 1px solid #dcefe8;
+
+        .history-grid-details {
+            grid-template-columns: 1fr;
+            gap: 10px;
         }
-        .session-title { display: flex; align-items: center; gap: 12px; min-width: 0; }
-        .bolt {
-            display: grid;
-            flex: 0 0 42px;
-            width: 42px;
-            height: 42px;
-            place-items: center;
-            color: #059669;
-            background: #d1fae5;
-            border-radius: 13px;
-            font-size: 21px;
+
+        .history-cost-banner {
+            padding: 16px;
         }
-        .session-title h2 { margin: 0; color: #0f172a; font-size: 18px; }
-        .session-date { margin-top: 4px; color: #64748b; font-size: 13px; }
-        .badge {
-            flex: 0 0 auto;
-            padding: 7px 11px;
-            color: #047857;
-            background: #d1fae5;
-            border-radius: 999px;
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: capitalize;
-        }
-        .badge.unpaid { color: #b45309; background: #fef3c7; }
-        .card-body { padding: 22px 24px 24px; }
-        .location { margin-bottom: 18px; color: #334155; font-weight: 650; }
-        .location small { display: block; margin-top: 5px; color: #64748b; font-weight: 400; }
-        .details {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 12px;
-        }
-        .detail {
-            min-width: 0;
-            padding: 14px 16px;
-            background: #f8fafc;
-            border: 1px solid #eef2f7;
-            border-radius: 12px;
-        }
-        .detail-label { display: block; margin-bottom: 6px; color: #64748b; font-size: 12px; }
-        .detail-value { color: #1e293b; font-size: 14px; font-weight: 650; overflow-wrap: anywhere; }
-        .expense {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            margin-top: 18px;
-            padding: 18px 20px;
-            color: #fff;
-            background: linear-gradient(115deg, #047857, #059669);
-            border-radius: 14px;
-        }
-        .expense-label { font-size: 13px; opacity: .9; }
-        .expense-amount { margin-top: 4px; font-size: clamp(22px, 5vw, 28px); font-weight: 750; }
-        .payment-info { margin-top: 14px; color: #64748b; font-size: 13px; line-height: 1.7; }
-        .invoice-link { color: #047857; font-weight: 650; text-decoration: none; }
-        .invoice-link:hover { text-decoration: underline; }
-        .empty {
-            padding: 48px 24px;
-            text-align: center;
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 18px;
-            box-shadow: 0 8px 24px rgba(15, 23, 42, .05);
-        }
-        .empty-icon { font-size: 40px; }
-        .empty h2 { margin: 12px 0 8px; color: #1e293b; font-size: 20px; }
-        .empty p { margin: 0; color: #64748b; line-height: 1.6; }
-        @media (max-width: 600px) {
-            body { padding: 22px 14px 40px; }
-            .history-heading { align-items: flex-start; flex-direction: column; }
-            .card-header { align-items: flex-start; padding: 17px; }
-            .card-body { padding: 17px; }
-            .details { gap: 9px; }
-            .detail { padding: 12px; }
-            .expense { padding: 16px; }
-        }
-        @media (max-width: 380px) {
-            .details { grid-template-columns: 1fr; }
-            .badge { font-size: 11px; }
-        }
-    </style>
-</head>
-<body>
-<main class="container">
-    <div style="margin-bottom: 24px;">
-        <x-back-link href="{{ route('dashboard') }}" />
+    }
+</style>
+
+<div class="history-page-wrap">
+    {{-- Navigasi Kembali --}}
+    <div class="history-nav-wrap">
+        <x-back-link href="{{ route('dashboard') }}" label="Kembali ke Dashboard" />
     </div>
 
-    <header class="history-heading">
-        <div>
-            <h1 class="page-heading">Riwayat Charging</h1>
-            <p class="intro">Lihat detail pemakaian energi dan biaya untuk setiap sesi pengisian kendaraan Anda.</p>
-        </div>
+    {{-- Judul Halaman --}}
+    <header class="history-header">
+        <h1>Riwayat Charging</h1>
+        <p>Lihat detail pemakaian energi dan biaya untuk setiap sesi pengisian kendaraan Anda.</p>
     </header>
 
     @forelse ($histories as $history)
@@ -148,25 +281,25 @@
             $paidAtWib = $transaction?->paid_at?->copy()->timezone('Asia/Jakarta');
         @endphp
 
-        <article class="card">
-            <header class="card-header">
-                <div class="session-title">
-                    <span class="bolt" aria-hidden="true">⚡</span>
+        <article class="history-card">
+            <header class="history-card-header">
+                <div class="session-title-wrap">
+                    <span class="session-bolt-icon" aria-hidden="true">⚡</span>
                     <div>
                         <h2>Sesi Charging #{{ $history->id }}</h2>
-                        <div class="session-date">
+                        <div class="session-date-text">
                             {{ $startTimeWib?->translatedFormat('d F Y, H:i') ?? 'Waktu tidak tersedia' }}
                         </div>
                     </div>
                 </div>
-                <span class="badge {{ $isPaid ? '' : 'unpaid' }}">
+                <span class="status-badge-pill {{ $isPaid ? '' : 'unpaid' }}">
                     {{ $isPaid ? 'Lunas' : 'Menunggu pembayaran' }}
                 </span>
             </header>
 
-            <div class="card-body">
-                <div class="location">
-                    {{ $charger?->location?->nama_lokasi ?? 'Lokasi SPKLU' }}
+            <div class="history-card-body">
+                <div class="station-location-block">
+                    <span>{{ $charger?->location?->nama_lokasi ?? 'Lokasi SPKLU' }}</span>
                     <small>
                         Charger {{ $charger?->device_number ?? '-' }}
                         @if ($charger?->connector_type)
@@ -178,18 +311,18 @@
                     </small>
                 </div>
 
-                <div class="details">
-                    <div class="detail">
-                        <span class="detail-label">Waktu mulai</span>
-                        <span class="detail-value">{{ $startTimeWib?->format('H:i:s') ?? '-' }}</span>
+                <div class="history-grid-details">
+                    <div class="detail-item-box">
+                        <span class="detail-item-label">Waktu mulai</span>
+                        <span class="detail-item-value">{{ $startTimeWib?->format('H:i:s') ?? '-' }}</span>
                     </div>
-                    <div class="detail">
-                        <span class="detail-label">Waktu selesai</span>
-                        <span class="detail-value">{{ $endTimeWib?->format('H:i:s') ?? '-' }}</span>
+                    <div class="detail-item-box">
+                        <span class="detail-item-label">Waktu selesai</span>
+                        <span class="detail-item-value">{{ $endTimeWib?->format('H:i:s') ?? '-' }}</span>
                     </div>
-                    <div class="detail">
-                        <span class="detail-label">Durasi pengisian</span>
-                        <span class="detail-value">
+                    <div class="detail-item-box">
+                        <span class="detail-item-label">Durasi pengisian</span>
+                        <span class="detail-item-value">
                             @if ($durationSeconds !== null)
                                 {{ sprintf('%02d:%02d:%02d', $durationHours, $durationMinutes, $remainingSeconds) }}
                             @else
@@ -197,13 +330,13 @@
                             @endif
                         </span>
                     </div>
-                    <div class="detail">
-                        <span class="detail-label">Energi digunakan</span>
-                        <span class="detail-value">{{ number_format((float) ($history->energy_consumed_kwh ?? 0), 3, ',', '.') }} kWh</span>
+                    <div class="detail-item-box">
+                        <span class="detail-item-label">Energi digunakan</span>
+                        <span class="detail-item-value">{{ number_format((float) ($history->energy_consumed_kwh ?? 0), 3, ',', '.') }} kWh</span>
                     </div>
-                    <div class="detail">
-                        <span class="detail-label">Tarif charger</span>
-                        <span class="detail-value">
+                    <div class="detail-item-box">
+                        <span class="detail-item-label">Tarif charger</span>
+                        <span class="detail-item-value">
                             @if ($charger?->price_per_kwh !== null)
                                 Rp {{ number_format((float) $charger->price_per_kwh, 0, ',', '.') }} / kWh
                             @else
@@ -211,24 +344,24 @@
                             @endif
                         </span>
                     </div>
-                    <div class="detail">
-                        <span class="detail-label">Kendaraan</span>
-                        <span class="detail-value">
+                    <div class="detail-item-box">
+                        <span class="detail-item-label">Kendaraan</span>
+                        <span class="detail-item-value">
                             {{ trim(($history->vehicle?->merek ?? '') . ' ' . ($history->vehicle?->model ?? '')) ?: '-' }}
                         </span>
                     </div>
                 </div>
 
-                <div class="expense">
+                <div class="history-cost-banner">
                     <div>
-                        <div class="expense-label">{{ $isPaid ? 'Total dibayarkan' : 'Total tagihan' }}</div>
-                        <div class="expense-amount">Rp {{ number_format((float) $amount, 0, ',', '.') }}</div>
+                        <div class="cost-banner-label">{{ $isPaid ? 'Total dibayarkan' : 'Total tagihan' }}</div>
+                        <div class="cost-banner-amount">Rp {{ number_format((float) $amount, 0, ',', '.') }}</div>
                     </div>
                     <span aria-hidden="true" style="font-size: 26px;">💳</span>
                 </div>
 
                 @if ($transaction)
-                    <div class="payment-info">
+                    <div class="history-payment-meta">
                         Pembayaran: {{ ucfirst($transaction->payment_method ?? 'e-wallet') }}
                         @if ($transaction->paid_at)
                             · {{ $paidAtWib->format('d/m/Y H:i') }}
@@ -237,20 +370,19 @@
                             <br>No. invoice: {{ $transaction->invoice_number }}
                         @endif
                         <br>
-                        <a class="invoice-link" href="{{ route('charging.invoice', $history->id) }}">Lihat invoice →</a>
+                        <a class="invoice-action-link" href="{{ route('charging.invoice', $history->id) }}">Lihat invoice →</a>
                         ·
-                        <a class="invoice-link" href="{{ route('charging.invoice.pdf', $history->id) }}">Unduh PDF</a>
+                        <a class="invoice-action-link" href="{{ route('charging.invoice.pdf', $history->id) }}">Unduh PDF</a>
                     </div>
                 @endif
             </div>
         </article>
     @empty
-        <section class="empty">
-            <div class="empty-icon" aria-hidden="true">🔋</div>
+        <section class="empty-state-box">
+            <div class="empty-state-icon" aria-hidden="true">🔋</div>
             <h2>Belum Ada Riwayat Charging</h2>
             <p>Riwayat pengisian dan rincian biayanya akan muncul di sini setelah sesi charging selesai.</p>
         </section>
     @endforelse
-</main>
-</body>
-</html>
+</div>
+@endsection

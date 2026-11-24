@@ -79,13 +79,61 @@
             <p style="color: #64748b; font-size: 14px; font-style: italic;">Belum ada kendaraan yang didaftarkan.</p>
         @else
             <div style="display: grid; gap: 15px; margin-top: 15px;">
+                @php
+                    $selectedVehId = session('selected_vehicle_id');
+                @endphp
                 @foreach($vehicles as $vehicle)
-                    <div style="background: #f8fafc; padding: 15px 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #10b981;">
+                    @php
+                        $isActive = ($selectedVehId && (string)$selectedVehId === (string)$vehicle->id_vehicle) || (!$selectedVehId && $loop->first);
+                    @endphp
+                    <div style="background: #f8fafc; padding: 15px 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid {{ $isActive ? '#10b981' : '#94a3b8' }};">
                         <div>
-                            <h4 style="margin: 0 0 5px 0; font-size: 15px; color: #1e293b;">{{ $vehicle->nomor_polisi }}</h4>
-                            <p style="margin: 0; font-size: 13px; color: #64748b;">{{ $vehicle->merek }} - {{ $vehicle->model }}</p>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <h4 style="margin: 0; font-size: 15px; color: #1e293b; font-weight: 700;">{{ $vehicle->nomor_polisi }}</h4>
+                                @if($isActive)
+                                    <span style="background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">✓ Kendaraan Aktif</span>
+                                @else
+                                    <form action="{{ route('vehicles.select') }}" method="POST" style="margin: 0; display: inline;">
+                                        @csrf
+                                        <input type="hidden" name="vehicle_id" value="{{ $vehicle->id_vehicle }}">
+                                        <button type="submit" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                                            Gunakan Mobil Ini
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
+                            <p style="margin: 4px 0 0 0; font-size: 13px; color: #64748b;">{{ $vehicle->merek }} - {{ $vehicle->model }}</p>
                         </div>
-                        <div style="background: #10b981; color: #fff; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">🔌 {{ $vehicle->tipe_konektor }}</div>
+                        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <span style="background: #e0f2fe; color: #0284c7; padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold;">🔋 {{ $vehicle->battery_capacity_kwh ?? 50 }} kWh</span>
+                            <span style="background: #10b981; color: #fff; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">🔌 {{ $vehicle->tipe_konektor }}</span>
+                            
+                            {{-- Tombol Edit --}}
+                            <button 
+                                type="button" 
+                                onclick="openEditVehicleModal({{ json_encode([
+                                    'id' => $vehicle->id_vehicle,
+                                    'merek' => $vehicle->merek,
+                                    'model' => $vehicle->model,
+                                    'nomor_polisi' => $vehicle->nomor_polisi,
+                                    'tipe_konektor' => $vehicle->tipe_konektor,
+                                    'battery_capacity_kwh' => $vehicle->battery_capacity_kwh ?? 50
+                                ]) }})" 
+                                title="Edit Kendaraan" 
+                                style="background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;"
+                            >
+                                ✏️ Edit
+                            </button>
+
+                            {{-- Tombol Hapus --}}
+                            <form action="{{ route('vehicles.destroy', $vehicle->id_vehicle) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kendaraan {{ $vehicle->nomor_polisi }}?');" style="margin: 0;">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" title="Hapus Kendaraan" style="background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;">
+                                    🗑️ Hapus
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 @endforeach
             </div>
@@ -125,13 +173,69 @@
                 </select>
             </div>
 
+            <div class="input-group" style="margin-top: 15px;">
+                <label>Kapasitas Baterai (kWh) - Opsional</label>
+                <input type="number" step="0.1" min="5" max="250" name="battery_capacity_kwh" placeholder="Contoh: 58 (Standar bawaan: 50 kWh)">
+                <small style="color: #64748b; font-size: 12px; margin-top: 4px; display: block;">Membantu sistem menghitung persentase baterai secara akurat saat sesi pengisian.</small>
+            </div>
+
             <button type="submit" class="btn-submit" style="width: 200px; margin-top: 20px;">Simpan Kendaraan</button>
         </form>
     </div>
 
 </div>
 
-<!-- Script Interaktif untuk Toggle Mode Edit -->
+<!-- Modal Pop-up Edit Kendaraan -->
+<div id="modalEditVehicle" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 9999; justify-content: center; align-items: center; padding: 20px;">
+    <div style="background: #ffffff; width: 100%; max-width: 500px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2); overflow: hidden;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+            <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: #0f172a;">✏️ Edit Data Kendaraan</h3>
+            <button type="button" onclick="closeEditVehicleModal()" style="border: none; background: transparent; font-size: 20px; cursor: pointer; color: #64748b; line-height: 1;">✕</button>
+        </div>
+
+        <form id="formEditVehicle" method="POST" style="padding: 24px;">
+            @csrf
+            @method('PUT')
+
+            <div style="margin-bottom: 14px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">Merek Kendaraan</label>
+                <input type="text" id="edit_merek" name="merek" required style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 14px; box-sizing: border-box;">
+            </div>
+
+            <div style="margin-bottom: 14px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">Model Kendaraan</label>
+                <input type="text" id="edit_model" name="model" required style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 14px; box-sizing: border-box;">
+            </div>
+
+            <div style="margin-bottom: 14px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">Nomor Polisi</label>
+                <input type="text" id="edit_nomor_polisi" name="nomor_polisi" required style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 14px; box-sizing: border-box;">
+            </div>
+
+            <div style="margin-bottom: 14px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">Tipe Konektor Pengisian</label>
+                <select id="edit_tipe_konektor" name="tipe_konektor" required style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 14px; box-sizing: border-box; background: #fff;">
+                    <option value="Type 2 (AC)">Type 2 (AC)</option>
+                    <option value="CCS 2 (DC)">CCS 2 (DC Fast Charging)</option>
+                    <option value="CHAdeMO (DC)">CHAdeMO (DC)</option>
+                    <option value="GB/T">GB/T</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 22px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">Kapasitas Baterai (kWh)</label>
+                <input type="number" step="0.1" min="5" max="250" id="edit_battery_capacity_kwh" name="battery_capacity_kwh" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 14px; box-sizing: border-box;">
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" onclick="closeEditVehicleModal()" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 10px 18px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer;">Batal</button>
+                <button type="submit" style="background: #10b981; color: #ffffff; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer;">Simpan Perubahan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Script Interaktif untuk Toggle Mode Edit Profil & Modal Kendaraan -->
 <script>
     function toggleEditMode() {
         const viewMode = document.getElementById('profile-view-mode');
@@ -152,5 +256,30 @@
             btnToggle.style.color = '#ffffff';
         }
     }
+
+    function openEditVehicleModal(data) {
+        const modal = document.getElementById('modalEditVehicle');
+        const form = document.getElementById('formEditVehicle');
+        form.action = `/profile/vehicle/${data.id}`;
+        document.getElementById('edit_merek').value = data.merek || '';
+        document.getElementById('edit_model').value = data.model || '';
+        document.getElementById('edit_nomor_polisi').value = data.nomor_polisi || '';
+        document.getElementById('edit_tipe_konektor').value = data.tipe_konektor || 'Type 2 (AC)';
+        document.getElementById('edit_battery_capacity_kwh').value = data.battery_capacity_kwh || 50;
+        
+        modal.style.display = 'flex';
+    }
+
+    function closeEditVehicleModal() {
+        document.getElementById('modalEditVehicle').style.display = 'none';
+    }
+
+    // Tutup modal jika klik di luar area konten
+    window.addEventListener('click', function(e) {
+        const modal = document.getElementById('modalEditVehicle');
+        if (e.target === modal) {
+            closeEditVehicleModal();
+        }
+    });
 </script>
 @endsection

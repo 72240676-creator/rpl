@@ -7,7 +7,7 @@
     href="{{ $href }}"
     {{ $attributes->merge([
         'class' => 'app-back-link',
-        'style' => 'display: inline-flex; align-items: center; gap: 8px; color: #64748b; font-size: 14px; font-weight: 500; line-height: 1.5; text-decoration: none;',
+        'style' => 'display: inline-flex; align-items: center; gap: 8px; color: #64748b; font-size: 14px; font-weight: 500; line-height: 1.5; text-decoration: none; cursor: pointer; transition: color 0.15s ease;',
     ]) }}
 >
     <span aria-hidden="true">←</span>

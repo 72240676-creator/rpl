@@ -6,6 +6,7 @@ use App\Models\Charger;
 use App\Models\ChargingSession;
 use App\Models\Location;
 use App\Models\LaporanPengguna;
+use App\Models\Notification;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -120,6 +121,22 @@ class OperatorDashboardController extends Controller
         $report->update([
             'status' => $validated['status'],
         ]);
+
+        // Kirim notifikasi ke pengemudi pelapor
+        if (!empty($report->id_user)) {
+            $statusLabel = match ($validated['status']) {
+                'diproses' => 'sedang diproses oleh tim teknisi',
+                'selesai' => 'telah selesai ditangani oleh tim operator',
+                default => 'telah diperbarui statusnya',
+            };
+
+            Notification::create([
+                'user_id' => $report->id_user,
+                'title' => 'Laporan Pengaduan ' . ucfirst($validated['status']),
+                'message' => "Laporan Anda mengenai '{$report->judul}' {$statusLabel}. Terima kasih telah membantu menjaga fasilitas SPKLU kami.",
+                'is_read' => false,
+            ]);
+        }
 
         return back()->with('success', 'Status laporan berhasil diperbarui.');
     }

@@ -53,4 +53,12 @@ class Charger extends Model
     {
         return $this->belongsTo(User::class, 'inspection_reported_by', 'id_user');
     }
+
+    /**
+     * Accessor alias id untuk standarisasi pemanggilan.
+     */
+    public function getIdAttribute(): int
+    {
+        return (int) $this->id_charger;
+    }
 }

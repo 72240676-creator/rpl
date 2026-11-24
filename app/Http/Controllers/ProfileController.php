@@ -24,17 +24,46 @@ class ProfileController extends Controller
             'model' => 'required|string|max:50',
             'nomor_polisi' => 'required|string|max:15',
             'tipe_konektor' => 'required|string',
+            'battery_capacity_kwh' => 'nullable|numeric|min:5|max:250',
         ]);
 
         Vehicle::create([
-            'id_user' => Auth::user()->id_user, // Mengambil id_user yang sedang login secara spesifik
+            'id_user' => Auth::user()->id_user,
             'merek' => $request->merek,
             'model' => $request->model,
             'nomor_polisi' => strtoupper($request->nomor_polisi),
             'tipe_konektor' => $request->tipe_konektor,
+            'battery_capacity_kwh' => $request->filled('battery_capacity_kwh') ? (float) $request->battery_capacity_kwh : 50.0,
+            'current_battery_soc' => 25,
         ]);
 
         return back()->with('success', 'Kendaraan listrik berhasil didaftarkan!');
+    }
+
+    public function updateVehicle(Request $request, Vehicle $vehicle)
+    {
+        $userId = Auth::user()->id_user ?? Auth::id();
+        if ($vehicle->id_user != $userId) {
+            abort(403, 'Anda tidak memiliki hak untuk memperbarui kendaraan ini.');
+        }
+
+        $validated = $request->validate([
+            'merek' => 'required|string|max:50',
+            'model' => 'required|string|max:50',
+            'nomor_polisi' => 'required|string|max:15',
+            'tipe_konektor' => 'required|string',
+            'battery_capacity_kwh' => 'nullable|numeric|min:5|max:250',
+        ]);
+
+        $vehicle->update([
+            'merek' => $validated['merek'],
+            'model' => $validated['model'],
+            'nomor_polisi' => strtoupper($validated['nomor_polisi']),
+            'tipe_konektor' => $validated['tipe_konektor'],
+            'battery_capacity_kwh' => !empty($validated['battery_capacity_kwh']) ? (float) $validated['battery_capacity_kwh'] : 50.0,
+        ]);
+
+        return back()->with('success', 'Data kendaraan ' . $vehicle->nomor_polisi . ' berhasil diperbarui!');
     }
 
     public function selectVehicle(Request $request)
@@ -78,6 +107,33 @@ class ProfileController extends Controller
         $user->update($data);
 
         return back()->with('success', 'Informasi profil berhasil diperbarui!');
+    }
+
+    /**
+     * Hapus data kendaraan milik pengguna.
+     */
+    public function destroyVehicle(Vehicle $vehicle)
+    {
+        $userId = Auth::user()->id_user ?? Auth::id();
+        if ($vehicle->id_user != $userId) {
+            abort(403, 'Anda tidak memiliki hak untuk menghapus kendaraan ini.');
+        }
+
+        $vehicleName = $vehicle->merek . ' ' . $vehicle->model . ' (' . $vehicle->nomor_polisi . ')';
+        $vehicleId = $vehicle->id_vehicle;
+        $vehicle->delete();
+
+        // Jika kendaraan yang dihapus adalah kendaraan aktif di session, reset ke kendaraan pertama atau null
+        if (session('selected_vehicle_id') == $vehicleId) {
+            $nextVehicle = Auth::user()->vehicles()->first();
+            if ($nextVehicle) {
+                session(['selected_vehicle_id' => $nextVehicle->id_vehicle]);
+            } else {
+                session()->forget('selected_vehicle_id');
+            }
+        }
+
+        return back()->with('success', "Kendaraan {$vehicleName} berhasil dihapus.");
     }
 
     /**

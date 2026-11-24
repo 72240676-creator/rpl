@@ -45,6 +45,13 @@ class ChargingSessionController extends Controller
             ]);
         }
 
+        if ($charger->is_online === false || $charger->status !== 'tersedia') {
+            $statusLabel = !$charger->is_online ? 'sedang offline' : 'sedang ' . ($charger->status ?? 'digunakan') . ' oleh kendaraan lain';
+            throw ValidationException::withMessages([
+                'charger_id' => "Unit charger ini {$statusLabel}. Silakan pilih charger yang tersedia.",
+            ]);
+        }
+
         $vehicle = $user->vehicles()
             ->where('id_vehicle', $validated['vehicle_id'])
             ->first();
@@ -55,9 +62,43 @@ class ChargingSessionController extends Controller
                 ->withInput();
         }
 
+        // Validasi kecocokan konektor kendaraan dengan charger
+        $vConn = strtolower(preg_replace('/[^a-z0-9]/', '', $vehicle->tipe_konektor ?? ''));
+        $cConn = strtolower(preg_replace('/[^a-z0-9]/', '', $charger->connector_type ?? ''));
+        if (!empty($vConn) && !empty($cConn)) {
+            $vIsCcs = str_contains($vConn, 'ccs');
+            $cIsCcs = str_contains($cConn, 'ccs');
+            $vIsType2 = str_contains($vConn, 'type2');
+            $cIsType2 = str_contains($cConn, 'type2');
+            $vIsChademo = str_contains($vConn, 'chademo');
+            $cIsChademo = str_contains($cConn, 'chademo');
+            $vIsGbt = str_contains($vConn, 'gbt');
+            $cIsGbt = str_contains($cConn, 'gbt');
+
+            $isCompatible = ($vIsCcs && ($cIsCcs || $cIsType2))
+                || ($vIsType2 && $cIsType2)
+                || ($vIsChademo && $cIsChademo)
+                || ($vIsGbt && $cIsGbt)
+                || ($vConn === $cConn);
+
+            if (!$isCompatible) {
+                throw ValidationException::withMessages([
+                    'vehicle_id' => "Tipe konektor kendaraan ({$vehicle->tipe_konektor}) tidak sesuai dengan jenis soket charger ini ({$charger->connector_type}).",
+                ]);
+            }
+        }
+
         $reservedAmount = (int) $validated['reserved_amount'];
         $session = DB::transaction(function () use ($userId, $charger, $vehicle, $reservedAmount) {
             $lockedUser = User::whereKey($userId)->lockForUpdate()->firstOrFail();
+            $lockedCharger = Charger::whereKey($charger->id_charger)->lockForUpdate()->firstOrFail();
+
+            if ($lockedCharger->is_online === false || $lockedCharger->status !== 'tersedia') {
+                throw ValidationException::withMessages([
+                    'charger_id' => 'Unit charger ini baru saja digunakan atau tidak tersedia.',
+                ]);
+            }
+
             $ongoingSession = ChargingSession::where('user_id', $userId)
                 ->where('status', 'ongoing')
                 ->first();
@@ -79,6 +120,7 @@ class ChargingSessionController extends Controller
             }
 
             $lockedUser->decrement('saldo', $reservedAmount);
+            $lockedCharger->update(['status' => 'digunakan']);
 
             $session = ChargingSession::create([
                 'user_id' => $userId,
@@ -171,7 +213,6 @@ class ChargingSessionController extends Controller
                     'session' => $lockedSession,
                     'newly_completed' => false,
                     'prepaid' => (float) ($lockedSession->reserved_amount ?? 0) > 0,
-                    'earned_points' => 0,
                 ];
             }
 
@@ -217,7 +258,7 @@ class ChargingSessionController extends Controller
                 'end_battery_soc' => $finalSoc,
                 'energy_consumed_kwh' => $energyConsumed,
                 'total_cost' => $totalCost,
-                'status' => $prepaid ? 'paid' : 'completed',
+                'status' => 'completed',
             ]);
 
             if ($lockedSession->vehicle) {
@@ -228,86 +269,31 @@ class ChargingSessionController extends Controller
                 $charger->update(['status' => 'tersedia']);
             }
 
-            $earnedPoints = 0;
-            if ($prepaid) {
-                $user = User::whereKey($lockedSession->user_id)
-                    ->lockForUpdate()
-                    ->firstOrFail();
-                $refund = max(0, (int) $reservedAmount - (int) $totalCost);
-
-                if ($refund > 0) {
-                    $user->increment('saldo', $refund);
-                }
-
-                $earnedPoints = (int) floor($totalCost / 10000);
-                if ($earnedPoints > 0) {
-                    $user->increment('points', $earnedPoints);
-                }
-
-                $holdTransaction = Transaction::where('session_id', $lockedSession->id)
-                    ->where('invoice_number', 'HOLD-' . $lockedSession->id)
-                    ->where('status', 'pending')
-                    ->lockForUpdate()
-                    ->firstOrFail();
-                $paidAt = now();
-
-                $holdTransaction->update([
-                    'invoice_number' => 'INV-' . $lockedSession->id . '-' . $paidAt->format('YmdHis'),
-                    'amount' => $totalCost,
-                    'description' => 'Pembayaran dari saldo yang ditahan saat sesi dimulai.',
-                    'status' => 'success',
-                    'paid_at' => $paidAt,
-                ]);
-
-                if ($refund > 0) {
-                    Transaction::create([
-                        'id_user' => $user->id_user,
-                        'session_id' => $lockedSession->id,
-                        'invoice_number' => 'REFUND-' . $lockedSession->id,
-                        'payment_method' => 'e-wallet',
-                        'amount' => $refund,
-                        'type' => 'refund',
-                        'description' => 'Pengembalian sisa dana reservasi charging.',
-                        'status' => 'success',
-                        'paid_at' => $paidAt,
-                    ]);
-                }
-            }
-
             return [
                 'session' => $lockedSession,
                 'newly_completed' => true,
                 'prepaid' => $prepaid,
-                'earned_points' => $earnedPoints,
             ];
         });
 
         $session = $result['session'];
-        if ($result['newly_completed'] && $session->user) {
+        if ($result['newly_completed'] && !$result['prepaid'] && $session->user) {
             try {
                 $session->user->notify(new ChargingFinishedNotification($session));
             } catch (\Exception $e) {
                 report($e);
             }
-
-            if ($result['prepaid'] && $session->user->email) {
-                try {
-                    Mail::to($session->user->email)->send(new SendChargingInvoiceMail($session));
-                } catch (\Exception $e) {
-                    report($e);
-                }
-            }
         }
 
-        if ($result['prepaid'] || $session->status === 'paid') {
+        if ($session->status === 'paid') {
             return redirect()
                 ->route('charging.invoice', $session->id)
-                ->with('success', 'Pengisian selesai. Biaya aktual telah dipotong dan sisa dana reservasi dikembalikan.');
+                ->with('success', 'Pembayaran sesi ini sudah selesai.');
         }
 
         return redirect()
             ->route('charging.payment.view', $session->id)
-            ->with('success', 'Pengisian daya dihentikan. Silakan lanjutkan pembayaran.');
+            ->with('success', 'Pengisian selesai. Tinjau tagihan sebelum menyelesaikan pembayaran.');
     }
 
     /**
@@ -318,7 +304,7 @@ class ChargingSessionController extends Controller
     public function paymentView(int $id)
     {
         $session = ChargingSession::with([
-            'charger',
+            'charger.location',
             'user',
             'vehicle',
         ])->findOrFail($id);
@@ -333,10 +319,8 @@ class ChargingSessionController extends Controller
         /*
          * Kalau sudah dibayar, langsung alihkan ke invoice.
          */
-        $transaction = Transaction::where(
-            'session_id',
-            $session->id
-        )
+        $transaction = Transaction::where('session_id', $session->id)
+            ->where('type', 'payment')
             ->where('status', 'success')
             ->first();
 
@@ -351,7 +335,7 @@ class ChargingSessionController extends Controller
                 );
         }
 
-        $charger = Charger::where('id_charger', $session->charger_id)->first() ?? $session->charger;
+        $charger = $session->charger ?? (Charger::with('location')->where('id_charger', $session->charger_id)->first());
 
         return view(
             'payment',
@@ -385,14 +369,12 @@ class ChargingSessionController extends Controller
         /*
          * Cek transaksi yang sudah berhasil.
          */
-        $transaction = Transaction::where(
-            'session_id',
-            $session->id
-        )
+        $transaction = Transaction::where('session_id', $session->id)
+            ->where('type', 'payment')
             ->where('status', 'success')
             ->first();
 
-        if ($transaction) {
+        if ($transaction || $session->status === 'paid') {
             if ($session->status !== 'paid') {
                 $session->update([
                     'status' => 'paid',
@@ -404,6 +386,16 @@ class ChargingSessionController extends Controller
                     'charging.invoice',
                     $session->id
                 );
+        }
+
+        if ($session->status !== 'completed') {
+            return redirect()
+                ->route('charging.session', $session->id)
+                ->with('error', 'Selesaikan sesi charging sebelum melakukan pembayaran.');
+        }
+
+        if ((float) ($session->reserved_amount ?? 0) > 0) {
+            return $this->payReservedSession($session, (int) $userId);
         }
 
         // Cek Saldo User
@@ -488,6 +480,117 @@ class ChargingSessionController extends Controller
             DB::rollBack();
             return back()->with('error', 'Gagal Database: ' . $e->getMessage());
         }
+    }
+
+    private function payReservedSession(ChargingSession $session, int $userId)
+    {
+        $result = DB::transaction(function () use ($session, $userId) {
+            $lockedSession = ChargingSession::whereKey($session->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+            $payment = Transaction::where('session_id', $lockedSession->id)
+                ->where('type', 'payment')
+                ->where('status', 'success')
+                ->lockForUpdate()
+                ->first();
+
+            if ($lockedSession->status === 'paid' || $payment) {
+                if ($lockedSession->status !== 'paid') {
+                    $lockedSession->update(['status' => 'paid']);
+                }
+
+                return ['already_paid' => true, 'earned_points' => 0];
+            }
+
+            if ($lockedSession->status !== 'completed') {
+                throw ValidationException::withMessages([
+                    'payment' => 'Selesaikan sesi charging sebelum melakukan pembayaran.',
+                ]);
+            }
+
+            $reservedAmount = (int) round((float) $lockedSession->reserved_amount);
+            $totalCost = (int) round((float) $lockedSession->total_cost);
+            if ($totalCost > $reservedAmount) {
+                throw ValidationException::withMessages([
+                    'payment' => 'Tagihan melebihi dana reservasi. Silakan hubungi operator.',
+                ]);
+            }
+
+            $user = User::whereKey($userId)->lockForUpdate()->firstOrFail();
+            $holdTransaction = Transaction::where('session_id', $lockedSession->id)
+                ->where('invoice_number', 'HOLD-' . $lockedSession->id)
+                ->where('status', 'pending')
+                ->lockForUpdate()
+                ->firstOrFail();
+            $paidAt = now();
+            $refund = max(0, $reservedAmount - $totalCost);
+            $earnedPoints = (int) floor($totalCost / 10000);
+
+            if ($refund > 0) {
+                $user->increment('saldo', $refund);
+            }
+            if ($earnedPoints > 0) {
+                $user->increment('points', $earnedPoints);
+            }
+
+            $holdTransaction->update([
+                'invoice_number' => 'INV-' . $lockedSession->id . '-' . $paidAt->format('YmdHis'),
+                'amount' => $totalCost,
+                'description' => 'Pembayaran dari saldo yang ditahan saat sesi dimulai.',
+                'status' => 'success',
+                'paid_at' => $paidAt,
+            ]);
+
+            if ($refund > 0) {
+                Transaction::create([
+                    'id_user' => $user->id_user,
+                    'session_id' => $lockedSession->id,
+                    'invoice_number' => 'REFUND-' . $lockedSession->id,
+                    'payment_method' => 'e-wallet',
+                    'amount' => $refund,
+                    'type' => 'refund',
+                    'description' => 'Pengembalian sisa dana reservasi charging.',
+                    'status' => 'success',
+                    'paid_at' => $paidAt,
+                ]);
+            }
+
+            $lockedSession->update(['status' => 'paid']);
+
+            return ['already_paid' => false, 'earned_points' => $earnedPoints];
+        });
+
+        if ($result['already_paid']) {
+            return redirect()->route('charging.invoice', $session->id);
+        }
+
+        $session->refresh();
+        $session->loadMissing('user');
+
+        if ($session->user && $session->user->email) {
+            try {
+                Mail::to($session->user->email)->send(new SendChargingInvoiceMail($session));
+            } catch (\Exception $e) {
+                report($e);
+            }
+        }
+
+        if ($session->user) {
+            try {
+                $session->user->notify(new ChargingFinishedNotification($session));
+            } catch (\Exception $e) {
+                report($e);
+            }
+        }
+
+        $message = 'Pembayaran berhasil! Invoice telah dikirim ke Gmail Anda.';
+        if ($result['earned_points'] > 0) {
+            $message = 'Pembayaran berhasil! Anda mendapatkan +' . $result['earned_points'] . ' Poin. Invoice telah dikirim ke Gmail Anda.';
+        }
+
+        return redirect()
+            ->route('charging.invoice', $session->id)
+            ->with('success', $message);
     }
 
     /**

@@ -346,8 +346,8 @@
 
     .quick-chargers-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-        gap: 10px;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 12px;
     }
 
     .quick-charger-card {
@@ -373,6 +373,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        gap: 8px;
         margin-bottom: 6px;
     }
 
@@ -380,6 +381,31 @@
         font-size: 13.5px;
         font-weight: 800;
         color: #0f172a;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+        flex: 1;
+    }
+
+    .qc-badges-group {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+
+    .qc-badge-match {
+        font-size: 10px;
+        font-weight: 700;
+        background: #bbf7d0;
+        color: #166534;
+        padding: 2px 8px;
+        border-radius: 8px;
+        white-space: nowrap;
+        display: inline-block;
+        line-height: 1.4;
     }
 
     .qc-badge {
@@ -389,6 +415,10 @@
         color: #065f46;
         padding: 2px 8px;
         border-radius: 10px;
+        white-space: nowrap;
+        flex-shrink: 0;
+        display: inline-block;
+        line-height: 1.4;
     }
 
     .qc-loc {
@@ -569,16 +599,41 @@
 
                     <div class="quick-chargers-grid">
                         @foreach($availableChargers as $chg)
-                            <a href="{{ route('scan.charge.show', $chg->id_charger) }}" class="quick-charger-card">
+                            @php
+                                $cConn = strtolower($chg->connector_type ?? '');
+                                $isCcs = str_contains($cConn, 'ccs');
+                                $isType2 = str_contains($cConn, 'type');
+                                
+                                $isMatch = false;
+                                if (isset($selectedVehicle) && !empty($selectedVehicle->tipe_konektor)) {
+                                    $vConn = strtolower($selectedVehicle->tipe_konektor);
+                                    if (str_contains($vConn, 'ccs') && ($isCcs || $isType2)) {
+                                        $isMatch = true;
+                                    } elseif (str_contains($vConn, 'type') && $isType2) {
+                                        $isMatch = true;
+                                    } elseif ($vConn === $cConn) {
+                                        $isMatch = true;
+                                    }
+                                }
+                            @endphp
+                            <a href="{{ route('scan.charge.show', $chg->id_charger) }}" class="quick-charger-card" style="{{ $isMatch ? 'border-color: #10b981; background: #f0fdf4;' : '' }}">
                                 <div>
                                     <div class="qc-top">
                                         <span class="qc-code">{{ $chg->device_number }}</span>
-                                        <span class="qc-badge">Tersedia</span>
+                                        <div class="qc-badges-group">
+                                            @if($isMatch)
+                                                <span class="qc-badge-match">✓ Cocok</span>
+                                            @endif
+                                            <span class="qc-badge">Tersedia</span>
+                                        </div>
                                     </div>
                                     <div class="qc-loc">{{ $chg->location->nama_lokasi ?? 'Stasiun SPKLU' }}</div>
                                 </div>
-                                <div class="qc-spec">
-                                    {{ $chg->connector_type }} · {{ round($chg->max_power_kw) }} kW
+                                <div class="qc-spec" style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+                                    <span>{{ $chg->connector_type }} · {{ round($chg->max_power_kw) }} kW</span>
+                                    <span style="font-size: 10.5px; font-weight: 800; color: {{ $isCcs ? '#0284c7' : '#d97706' }};">
+                                        {{ $isCcs ? '⚡ DC Fast' : '🔌 AC Normal' }}
+                                    </span>
                                 </div>
                             </a>
                         @endforeach

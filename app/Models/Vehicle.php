@@ -22,4 +22,12 @@ class Vehicle extends Model
     {
         return $this->belongsTo(User::class, 'id_user', 'id_user');
     }
+
+    /**
+     * Accessor alias id untuk standarisasi pemanggilan.
+     */
+    public function getIdAttribute(): int
+    {
+        return (int) $this->id_vehicle;
+    }
 }

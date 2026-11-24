@@ -42,4 +42,35 @@ class User extends Authenticatable
     {
         return $this->hasMany(Vehicle::class, 'id_user', 'id_user');
     }
+
+    /**
+     * Helper pemeriksaan peran (Role check).
+     */
+    public function isAdmin(): bool
+    {
+        return $this->peran === 'admin';
+    }
+
+    public function isOperator(): bool
+    {
+        return $this->peran === 'operator';
+    }
+
+    public function isDriver(): bool
+    {
+        return $this->peran === 'pengemudi' || empty($this->peran);
+    }
+
+    /**
+     * Accessor alias untuk kemudahan & konsistensi penamaan.
+     */
+    public function getRoleAttribute(): string
+    {
+        return (string) ($this->peran ?? 'pengemudi');
+    }
+
+    public function getBalanceAttribute(): float
+    {
+        return (float) ($this->saldo ?? 0);
+    }
 }

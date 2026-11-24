@@ -126,6 +126,79 @@ class CustomerDashboardTest extends TestCase
             ->assertNotFound();
     }
 
+    public function test_customer_can_delete_own_vehicle_and_cannot_delete_others_vehicle(): void
+    {
+        $user = $this->createCustomer();
+        $vehicle = $this->createVehicle($user, 'Hyundai', 'Ioniq 5', 'AB 1111 EV');
+
+        $otherUser = User::create([
+            'nama' => 'Pelanggan Lain 2',
+            'email' => 'other-customer-2@example.com',
+            'password' => Hash::make('password123'),
+            'peran' => 'pengemudi',
+            'status_akun' => 'aktif',
+        ]);
+        $otherVehicle = $this->createVehicle($otherUser, 'BYD', 'Seal', 'AB 2222 EV');
+
+        // Customer lain tidak boleh menghapus kendaraan milik user lain (403)
+        $this->actingAs($user)
+            ->delete(route('vehicles.destroy', $otherVehicle->id_vehicle))
+            ->assertForbidden();
+
+        // Customer dapat menghapus kendaraannya sendiri
+        $this->actingAs($user)
+            ->delete(route('vehicles.destroy', $vehicle->id_vehicle))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('vehicles', [
+            'id_vehicle' => $vehicle->id_vehicle,
+        ]);
+    }
+
+    public function test_customer_can_update_own_vehicle_and_cannot_update_others_vehicle(): void
+    {
+        $user = $this->createCustomer();
+        $vehicle = $this->createVehicle($user, 'Hyundai', 'Ioniq 5', 'AB 1111 EV');
+
+        $otherUser = User::create([
+            'nama' => 'Pelanggan Lain 3',
+            'email' => 'other-customer-3@example.com',
+            'password' => Hash::make('password123'),
+            'peran' => 'pengemudi',
+            'status_akun' => 'aktif',
+        ]);
+        $otherVehicle = $this->createVehicle($otherUser, 'BYD', 'Seal', 'AB 3333 EV');
+
+        // Customer tidak boleh mengupdate kendaraan milik orang lain
+        $this->actingAs($user)
+            ->put(route('vehicles.update', $otherVehicle->id_vehicle), [
+                'merek' => 'Tesla',
+                'model' => 'Model Y',
+                'nomor_polisi' => 'AB 9999 EV',
+                'tipe_konektor' => 'Type 2 (AC)',
+                'battery_capacity_kwh' => 75.0,
+            ])
+            ->assertForbidden();
+
+        // Customer dapat mengupdate kendaraannya sendiri
+        $this->actingAs($user)
+            ->put(route('vehicles.update', $vehicle->id_vehicle), [
+                'merek' => 'Hyundai Updated',
+                'model' => 'Ioniq 6',
+                'nomor_polisi' => 'AB 8888 EV',
+                'tipe_konektor' => 'CCS 2 (DC)',
+                'battery_capacity_kwh' => 77.4,
+            ])
+            ->assertSessionHas('success');
+
+        $vehicle->refresh();
+        $this->assertSame('Hyundai Updated', $vehicle->merek);
+        $this->assertSame('Ioniq 6', $vehicle->model);
+        $this->assertSame('AB 8888 EV', $vehicle->nomor_polisi);
+        $this->assertSame('CCS 2 (DC)', $vehicle->tipe_konektor);
+        $this->assertSame(77.4, (float) $vehicle->battery_capacity_kwh);
+    }
+
     private function createCustomer(): User
     {
         return User::create([

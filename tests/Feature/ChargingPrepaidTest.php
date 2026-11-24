@@ -60,9 +60,29 @@ class ChargingPrepaidTest extends TestCase
             'total_cost' => 1,
         ]);
 
-        $stopResponse->assertRedirect(route('charging.invoice', $session->id));
-        $this->assertSame('paid', $session->fresh()->status);
+        $stopResponse->assertRedirect(route('charging.payment.view', $session->id));
+        $this->assertSame('completed', $session->fresh()->status);
         $this->assertSame(31250.0, (float) $session->fresh()->total_cost);
+        $this->assertSame(50000.0, (float) $user->fresh()->saldo);
+        $this->assertSame(0, (int) $user->fresh()->points);
+        $this->assertDatabaseHas('transactions', [
+            'session_id' => $session->id,
+            'invoice_number' => 'HOLD-' . $session->id,
+            'amount' => 50000,
+            'type' => 'payment',
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('charging.payment.view', $session->id))
+            ->assertOk()
+            ->assertSee('Review pembayaran')
+            ->assertSee('Rp 31.250');
+
+        $this->post(route('charging.pay', $session->id))
+            ->assertRedirect(route('charging.invoice', $session->id));
+
+        $this->assertSame('paid', $session->fresh()->status);
         $this->assertSame(68750.0, (float) $user->fresh()->saldo);
         $this->assertSame(3, (int) $user->fresh()->points);
         $this->assertDatabaseHas('transactions', [
@@ -73,11 +93,14 @@ class ChargingPrepaidTest extends TestCase
         ]);
         $this->assertDatabaseHas('transactions', [
             'session_id' => $session->id,
-            'invoice_number' => 'REFUND-'.$session->id,
+            'invoice_number' => 'REFUND-' . $session->id,
             'amount' => 18750,
             'type' => 'refund',
             'status' => 'success',
         ]);
+
+        $this->post(route('charging.pay', $session->id))
+            ->assertRedirect(route('charging.invoice', $session->id));
 
         $this->post(route('charging.stop', $session->id), [
             'energy_consumed_kwh' => 12.5,

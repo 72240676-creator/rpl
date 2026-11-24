@@ -23,6 +23,12 @@
 
     $availableBalance = (int) (auth()->user()->saldo ?? 0);
     $maxReservation = min($availableBalance, 5000000);
+
+    $previousUrl = url()->previous();
+    $currentUrl = url()->current();
+    $backUrl = ($previousUrl && $previousUrl !== $currentUrl && !str_contains($previousUrl, 'login'))
+        ? $previousUrl
+        : route('scan.charge');
 @endphp
 
 <div style="
@@ -33,7 +39,11 @@
 
     <div style="margin-bottom: 25px;">
 
-        <x-back-link href="{{ url()->previous() }}" label="Kembali" />
+        <x-back-link 
+            href="{{ $backUrl }}" 
+            label="Kembali" 
+            onclick="if (window.history.length > 1 && document.referrer && document.referrer !== window.location.href) { window.history.back(); return false; }"
+        />
 
         <h2 style="
             margin: 15px 0 8px 0;
@@ -218,6 +228,7 @@
                     name="vehicle_id"
                     id="vehicle_id"
                     required
+                    onchange="updateCompatibilityNotice()"
                     style="
                         width: 100%;
                         padding: 12px;
@@ -228,26 +239,95 @@
                         font-size: 14px;
                     "
                 >
-                    <option value="">
+                    <option value="" data-connector="" data-compatible="0">
                         -- Pilih Kendaraan Anda --
                     </option>
 
                     @if(isset($vehicles) && count($vehicles) > 0)
                         @foreach($vehicles as $vehicle)
-                            <option value="{{ $vehicle->id_vehicle }}" @selected((string) $selectedVehicleId === (string) $vehicle->id_vehicle)>
-                                {{ $vehicle->merek }}
-                                {{ $vehicle->model }}
-                                ({{ $vehicle->nomor_polisi }})
+                            @php
+                                $vConn = strtolower($vehicle->tipe_konektor ?? '');
+                                $cConn = strtolower($connectorType);
+                                $isMatch = false;
+                                if (str_contains($vConn, 'ccs') && (str_contains($cConn, 'ccs') || str_contains($cConn, 'type'))) {
+                                    $isMatch = true;
+                                } elseif (str_contains($vConn, 'type') && str_contains($cConn, 'type')) {
+                                    $isMatch = true;
+                                } elseif ($vConn === $cConn) {
+                                    $isMatch = true;
+                                }
+                            @endphp
+                            <option 
+                                value="{{ $vehicle->id_vehicle }}" @selected((string) $selectedVehicleId === (string) $vehicle->id_vehicle)
+                                data-connector="{{ $vehicle->tipe_konektor ?? 'Standar' }}"
+                                data-name="{{ $vehicle->merek }} {{ $vehicle->model }}"
+                                data-compatible="{{ $isMatch ? '1' : '0' }}"
+                            >
+                                {{ $vehicle->merek }} {{ $vehicle->model }} ({{ $vehicle->nomor_polisi }}) · 🔌 {{ $vehicle->tipe_konektor ?? 'Standar' }} {{ $isMatch ? '✓ Cocok' : '' }}
                             </option>
                         @endforeach
                     @endif
                 </select>
+
+                {{-- Kotak Status Kompatibilitas Realtime --}}
+                <div id="compat-notice" style="margin-top: 10px; padding: 12px 14px; border-radius: 10px; font-size: 13px; display: none;"></div>
             </div>
 
             <div style="margin-bottom: 20px;">
                 <label for="reserved_amount" style="display: block; margin-bottom: 8px; font-weight: 600; color: #0f172a; font-size: 14px;">
                     Batas dana sesi (Rp):
                 </label>
+                
+                {{-- Quick Nominal Chips --}}
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;">
+                    @php
+                        $nominalPresets = [25000, 50000, 100000];
+                    @endphp
+                    @foreach($nominalPresets as $preset)
+                        @if($preset <= $maxReservation)
+                            <button 
+                                type="button" 
+                                class="chip-preset-btn"
+                                onclick="setNominal({{ $preset }}, this)"
+                                style="
+                                    background: #f1f5f9;
+                                    border: 1px solid #cbd5e1;
+                                    color: #334155;
+                                    padding: 6px 14px;
+                                    border-radius: 20px;
+                                    font-size: 12.5px;
+                                    font-weight: 700;
+                                    cursor: pointer;
+                                    transition: all 0.15s ease;
+                                "
+                            >
+                                Rp {{ number_format($preset, 0, ',', '.') }}
+                            </button>
+                        @endif
+                    @endforeach
+
+                    @if($maxReservation >= 10000)
+                        <button 
+                            type="button" 
+                            class="chip-preset-btn"
+                            onclick="setNominal({{ $maxReservation }}, this)"
+                            style="
+                                background: #f1f5f9;
+                                border: 1px solid #cbd5e1;
+                                color: #334155;
+                                padding: 6px 14px;
+                                border-radius: 20px;
+                                font-size: 12.5px;
+                                font-weight: 700;
+                                cursor: pointer;
+                                transition: all 0.15s ease;
+                            "
+                        >
+                            Maksimal (Rp {{ number_format($maxReservation, 0, ',', '.') }})
+                        </button>
+                    @endif
+                </div>
+
                 <input
                     type="number"
                     name="reserved_amount"
@@ -257,7 +337,7 @@
                     step="1000"
                     value="{{ old('reserved_amount', min(50000, $maxReservation)) }}"
                     required
-                    style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-size: 14px;"
+                    style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-size: 14px; box-sizing: border-box;"
                 >
                 <p style="margin: 7px 0 0; color: #64748b; font-size: 12px;">
                     Saldo tersedia Rp {{ number_format($availableBalance, 0, ',', '.') }}.
@@ -302,5 +382,71 @@
     </div>
 
 </div>
+
+<script>
+    function updateCompatibilityNotice() {
+        const select = document.getElementById('vehicle_id');
+        const notice = document.getElementById('compat-notice');
+        if (!select || !notice) return;
+
+        const selectedOption = select.options[select.selectedIndex];
+        if (!selectedOption || !selectedOption.value) {
+            notice.style.display = 'none';
+            return;
+        }
+
+        const isCompatible = selectedOption.getAttribute('data-compatible') === '1';
+        const vConn = selectedOption.getAttribute('data-connector') || 'Standar';
+        const vName = selectedOption.getAttribute('data-name') || 'Kendaraan';
+        const cConn = @json($connectorType);
+
+        notice.style.display = 'block';
+        if (isCompatible) {
+            notice.style.background = '#f0fdf4';
+            notice.style.border = '1px solid #bbf7d0';
+            notice.style.color = '#166534';
+            notice.innerHTML = `<strong>✓ Konektor Cocok:</strong> Port ${vConn} pada ${vName} kompatibel dengan charger unit ini (${cConn}).`;
+        } else {
+            notice.style.background = '#fffbeb';
+            notice.style.border = '1px solid #fde68a';
+            notice.style.color = '#92400e';
+            notice.innerHTML = `<strong>⚠️ Perhatian:</strong> Port ${vConn} (${vName}) berbeda dengan spesifikasi charger ini (${cConn}). Pastikan Anda menggunakan adaptor resmi yang sesuai.`;
+        }
+    }
+
+    function setNominal(amount, btnElement) {
+        const input = document.getElementById('reserved_amount');
+        if (input) {
+            input.value = amount;
+        }
+        document.querySelectorAll('.chip-preset-btn').forEach(b => {
+            b.style.background = '#f1f5f9';
+            b.style.borderColor = '#cbd5e1';
+            b.style.color = '#334155';
+        });
+        if (btnElement) {
+            btnElement.style.background = '#d1fae5';
+            btnElement.style.borderColor = '#10b981';
+            btnElement.style.color = '#065f46';
+        }
+    }
+
+    // Jalankan pengecekan kompatibilitas saat halaman selesai dimuat
+    document.addEventListener('DOMContentLoaded', function() {
+        updateCompatibilityNotice();
+
+        // Highlight preset aktif jika ada yang cocok dengan nilai awal
+        const currentVal = document.getElementById('reserved_amount')?.value;
+        if (currentVal) {
+            document.querySelectorAll('.chip-preset-btn').forEach(b => {
+                if (b.innerText.replace(/[^0-9]/g, '') === currentVal) {
+                    b.style.background = '#d1fae5';
+                    b.style.borderColor = '#10b981';
+                    b.style.color = '#065f46';
+                }
+            });
+        }
+    });
+</script>
 
 @endsection

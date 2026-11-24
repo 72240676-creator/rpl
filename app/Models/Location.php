@@ -38,4 +38,12 @@ class Location extends Model
     {
         return $this->hasMany(SpluSession::class, 'location_id', 'id_location');
     }
+
+    /**
+     * Accessor alias id untuk standarisasi pemanggilan.
+     */
+    public function getIdAttribute(): int
+    {
+        return (int) $this->id_location;
+    }
 }

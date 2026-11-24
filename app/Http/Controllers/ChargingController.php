@@ -13,15 +13,38 @@ class ChargingController extends Controller
      */
     public function scan()
     {
-        // Ambil unit charger yang aktif dan siap pakai untuk opsi Quick Select
+        $user = Auth::user();
+        $selectedVehicle = null;
+        if ($user) {
+            $selectedVehicleId = session('selected_vehicle_id');
+            $selectedVehicle = $user->vehicles->firstWhere('id_vehicle', $selectedVehicleId)
+                ?? $user->vehicles->first();
+        }
+
+        // Ambil unit charger yang aktif dan siap pakai dengan variasi konektor (CCS2 & Type 2)
         $availableChargers = Charger::with('location')
             ->where('is_online', true)
             ->where('status', 'tersedia')
+            ->orderBy('id_location')
             ->orderByDesc('max_power_kw')
-            ->limit(4)
+            ->limit(8)
             ->get();
 
-        return view('scan-charge', compact('availableChargers'));
+        // Jika user memiliki kendaraan aktif, urutkan agar charger yang cocok muncul di awal
+        if ($selectedVehicle && !empty($selectedVehicle->tipe_konektor)) {
+            $vConn = strtolower($selectedVehicle->tipe_konektor);
+            $availableChargers = $availableChargers->sortByDesc(function ($chg) use ($vConn) {
+                $cConn = strtolower($chg->connector_type ?? '');
+                $isCcs = str_contains($cConn, 'ccs');
+                $isType2 = str_contains($cConn, 'type');
+                if (str_contains($vConn, 'ccs') && ($isCcs || $isType2)) return 2;
+                if (str_contains($vConn, 'type') && $isType2) return 2;
+                if ($vConn === $cConn) return 2;
+                return 0;
+            })->values();
+        }
+
+        return view('scan-charge', compact('availableChargers', 'selectedVehicle'));
     }
 
     /**
@@ -69,47 +92,17 @@ class ChargingController extends Controller
      * Menampilkan detail charger.
      */
     public function show(int $charger)
-{
-    // Ambil charger berdasarkan primary key id_charger
-    $charger = Charger::findOrFail($charger);
-
-    // Ambil semua kendaraan milik user yang sedang login
-    $vehicles = auth()->user()->vehicles;
-    $selectedVehicleId = session('selected_vehicle_id');
-
-    return view(
-        'charger-detail',
-        compact('charger', 'vehicles', 'selectedVehicleId')
-    );
-}
-    public function start(Request $request)
     {
-        // Validasi: Pastikan charger_id yang dikirim benar-benar ada di kolom id_charger tabel chargers
-        $request->validate([
-            'charger_id' => 'required|exists:chargers,id_charger', 
-        ], [
-            'charger_id.exists' => 'Charger yang Anda pilih tidak tersedia di database.',
-        ]);
+        // Ambil charger berdasarkan primary key id_charger
+        $charger = Charger::findOrFail($charger);
 
-        // Ambil data user secara eksplisit menggunakan Model User agar Intelephense mengenalinya
-        $user = \App\Models\User::find(Auth::id());
-        $vehicle = $user ? $user->vehicles()->first() : null;
+        // Ambil semua kendaraan milik user yang sedang login
+        $vehicles = auth()->user()->vehicles;
+        $selectedVehicleId = session('selected_vehicle_id');
 
-        // Cegah error jika user belum mendaftarkan kendaraan di profilnya
-        if (!$vehicle) {
-            return back()->with('error', 'Anda harus mendaftarkan data kendaraan terlebih dahulu.');
-        }
-
-        // Simpan sesi pengisian daya dengan data dinamis yang valid
-        $session = \App\Models\ChargingSession::create([
-            'user_id'    => Auth::id(), // Akan otomatis mengambil id_user karena sudah diset di User.php
-            'vehicle_id' => $vehicle->id_vehicle ?? $vehicle->id, // Menyesuaikan dengan primary key Vehicle Anda
-            'charger_id' => $request->charger_id,
-            'status'     => 1, // Angka 1 mewakili status aktif
-            'start_time' => now(),
-        ]);
-
-        return redirect()->route('charging.session', $session->id)
-                         ->with('success', 'Pengisian daya berhasil dimulai!');
+        return view(
+            'charger-detail',
+            compact('charger', 'vehicles', 'selectedVehicleId')
+        );
     }
 }
