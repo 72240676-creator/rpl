@@ -411,6 +411,97 @@
         animation: inspection-panel-in .2s ease-out;
     }
 
+/* Laporan dari Operator */
+.forwarded-panel {
+    margin-bottom: 20px;
+}
+
+.forwarded-list {
+    display: grid;
+    gap: 12px;
+}
+
+.forwarded-report {
+    padding: 17px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #fff;
+}
+
+.forwarded-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.forwarded-title {
+    font-size: 14px;
+    font-weight: 750;
+    color: #1e293b;
+    margin: 0 0 5px;
+}
+
+.forwarded-meta {
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+.forwarded-description {
+    margin: 12px 0;
+    padding: 12px;
+    border-radius: 9px;
+    background: #f8fafc;
+    color: #475569;
+    font-size: 13px;
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+}
+
+.forwarded-status {
+    display: inline-block;
+    padding: 6px 11px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.forwarded-status.diproses {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.forwarded-status.selesai {
+    background: #dcfce7;
+    color: #047857;
+}
+
+.forwarded-photo {
+    display: block;
+    width: 160px;
+    max-width: 100%;
+    max-height: 130px;
+    object-fit: cover;
+    border-radius: 9px;
+    margin-top: 10px;
+}
+
+.forwarded-empty {
+    padding: 18px;
+    text-align: center;
+    border: 1px dashed #cbd5e1;
+    border-radius: 11px;
+    color: #64748b;
+    background: #f8fafc;
+    font-size: 13px;
+}
+
+
     @keyframes inspection-panel-in {
         from { opacity: 0; transform: translateY(-6px); }
         to { opacity: 1; transform: translateY(0); }
@@ -652,7 +743,7 @@
             <div>
                 <div class="stat-label">Charger Online</div>
                 <div class="stat-number" id="admin-online-chargers">{{ $stats['online_chargers'] }}</div>
-                <div class="stat-note">{{ $chargerStatuses[0]['percentage'] }}% online · Klik untuk detail →</div>
+                <div class="stat-note">{{ $stats['online_percentage'] }}% online · Klik untuk detail →</div>
             </div>
         </a>
 
@@ -666,19 +757,24 @@
             <span class="stat-icon icon-orange" aria-hidden="true">⚠️</span>
             <span>
                 <span class="stat-label" style="display:block;">Perlu Perhatian</span>
-                <span class="stat-number" id="admin-attention-chargers" style="display:block;color:#ea580c;">{{ $stats['attention_chargers'] }}</span>
+                <span class="stat-number" id="admin-attention-chargers" style="display:block;color:#ea580c;">{{ $stats['attention_total'] }}</span>
                 <span class="stat-note" style="display:block;">Klik untuk melihat laporan</span>
             </span>
         </button>
 
     </div>
-
+    <div id="admin-attention-reports" hidden>
     <section class="dashboard-card inspection-panel" id="admin-inspection-reports" aria-labelledby="inspection-reports-heading" hidden>
         <div class="card-heading">
             <div class="heading-icon" style="background:#fff7ed;">🛠️</div>
             <div>
-                <h3 id="inspection-reports-heading">Laporan Pemeriksaan Charger</h3>
-                <p>Laporan operator tersimpan bersama data charger dan dapat diperbarui di sini.</p>
+                <h3 id="inspection-reports-heading">
+                    Laporan Pemeriksaan Charger
+                </h3>
+                <p>
+                    Laporan operator tersimpan bersama data charger
+                    dan dapat diperbarui di sini.
+                </p>
             </div>
         </div>
 
@@ -686,43 +782,178 @@
             @forelse($inspectionReports as $report)
                 <article class="inspection-report">
                     <div class="inspection-report-main">
-                        <h4 class="inspection-report-title">{{ $report->device_number }}</h4>
+                        <h4 class="inspection-report-title">
+                            {{ $report->device_number }}
+                        </h4>
+
                         <div class="inspection-report-meta">
                             {{ $report->location?->nama_lokasi ?? 'Lokasi tidak tersedia' }}
-                            · Status charger: {{ ucfirst($report->status) }}{{ $report->is_online ? ' · Online' : ' · Offline' }}
+                            · Status charger:
+                            {{ ucfirst($report->status) }}
+                            {{ $report->is_online ? ' · Online' : ' · Offline' }}
                         </div>
-                        <p class="inspection-report-note">{{ $report->inspection_note }}</p>
+
+                        <p class="inspection-report-note">
+                            {{ $report->inspection_note }}
+                        </p>
+
                         <div class="inspection-report-time">
-                            Dilaporkan oleh {{ $report->inspectionReporter?->nama ?? 'Operator' }}
+                            Dilaporkan oleh
+                            {{ $report->inspectionReporter?->nama ?? 'Operator' }}
+
                             @if($report->inspection_reported_at)
                                 · {{ $report->inspection_reported_at->timezone('Asia/Jakarta')->format('d/m/Y H:i') }}
                             @endif
                         </div>
                     </div>
+
                     <div class="inspection-report-form">
-                        <form action="{{ route('admin.chargers.inspection.update', $report->id_charger) }}" method="POST">
+                        <form
+                            action="{{ route('admin.chargers.inspection.update', $report->id_charger) }}"
+                            method="POST"
+                        >
                             @csrf
                             @method('PUT')
+
                             <input type="hidden" name="needs_inspection" value="1">
-                            <label for="inspection-note-{{ $report->id_charger }}">Perbarui catatan</label>
-                            <textarea id="inspection-note-{{ $report->id_charger }}" name="inspection_note" maxlength="1000" required>{{ $report->inspection_note }}</textarea>
+
+                            <label for="inspection-note-{{ $report->id_charger }}">
+                                Perbarui catatan
+                            </label>
+
+                            <textarea
+                                id="inspection-note-{{ $report->id_charger }}"
+                                name="inspection_note"
+                                maxlength="1000"
+                                required
+                            >{{ $report->inspection_note }}</textarea>
+
                             <div class="inspection-report-actions">
-                                <button class="inspection-report-button" type="submit">Simpan perubahan</button>
+                                <button class="inspection-report-button" type="submit">
+                                    Simpan perubahan
+                                </button>
                             </div>
                         </form>
-                        <form action="{{ route('admin.chargers.inspection.update', $report->id_charger) }}" method="POST">
+
+                        <form
+                            action="{{ route('admin.chargers.inspection.update', $report->id_charger) }}"
+                            method="POST"
+                        >
                             @csrf
                             @method('PUT')
+
                             <input type="hidden" name="needs_inspection" value="0">
-                            <button class="inspection-report-button resolve" type="submit">Tandai selesai</button>
+
+                            <button class="inspection-report-button resolve" type="submit">
+                                Tandai selesai
+                            </button>
                         </form>
                     </div>
                 </article>
             @empty
-                <div class="inspection-empty">Tidak ada laporan pemeriksaan yang menunggu tindak lanjut.</div>
+                <div class="inspection-empty">
+                    Tidak ada laporan pemeriksaan yang menunggu tindak lanjut.
+                </div>
             @endforelse
         </div>
     </section>
+
+    {{-- Laporan Pengguna yang Diteruskan Operator --}}
+    <section class="dashboard-card forwarded-panel">
+
+        <div class="card-heading">
+            <div class="heading-icon">📩</div>
+            <div>
+                <h3>Laporan dari Operator</h3>
+                <p>
+                    Laporan pengguna yang telah diteruskan Operator kepada Admin.
+                    <strong>{{ $forwardedReports->count() }} laporan diterima</strong>
+                </p>
+            </div>
+        </div>
+
+        <div class="forwarded-list">
+
+            @forelse ($forwardedReports as $report)
+
+                @php
+                    $reportStatus = $report->status ?? 'menunggu';
+                @endphp
+
+                <article class="forwarded-report">
+
+                    <div class="forwarded-header">
+                        <div>
+                            <h4 class="forwarded-title">
+                                {{ $report->jenis_masalah }}
+                            </h4>
+
+                            <div class="forwarded-meta">
+                                Pelapor:
+                                {{ $report->user?->nama ?? 'Pengguna' }}
+                                <br>
+
+                                Lokasi:
+                                {{ $report->location?->nama_lokasi ?? 'Tidak tersedia' }}
+                                <br>
+
+                                Charger:
+                                {{ $report->charger?->device_number ?? 'Tidak ditentukan' }}
+                            </div>
+                        </div>
+
+                        <span class="forwarded-status {{ $reportStatus }}">
+                            {{ ucfirst($reportStatus) }}
+                        </span>
+                    </div>
+
+                    <div class="forwarded-description">
+                        <strong>Deskripsi laporan:</strong><br>
+                        {{ $report->deskripsi }}
+                    </div>
+
+                    @if ($report->foto)
+                        <div class="forwarded-meta">
+                            Foto laporan:
+                        </div>
+
+                        <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($report->foto) }}"target="_blank"rel="noopener noreferrer">
+                            <img
+                                src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($report->foto) }}"
+                                alt="Foto laporan pengguna"
+                                class="forwarded-photo"
+                            >
+                        </a>
+                    @endif
+
+                    <div class="forwarded-meta" style="margin-top:12px;">
+                        Diteruskan oleh:
+                        {{ $report->operator?->nama ?? 'Operator' }}
+
+                        <br>
+
+                        Tanggal laporan:
+                        {{ $report->created_at?->timezone('Asia/Jakarta')->format('d/m/Y H:i') ?? '-' }}
+                    </div>
+
+                </article>
+
+            @empty
+
+                <div class="forwarded-empty">
+                    <div style="font-size:25px;margin-bottom:8px;">📭</div>
+                    <strong>Belum ada laporan dari Operator.</strong>
+                    <div style="margin-top:5px;">
+                        Laporan yang diteruskan Operator akan muncul di sini.
+                    </div>
+                </div>
+
+            @endforelse
+
+        </div>
+    </section>
+    </div>
+
 
     {{-- Status Operasional dan Ringkasan Sistem --}}
     <div class="dashboard-grid">
@@ -874,20 +1105,25 @@
     </div>
 
 </div>
-
 <script>
     (() => {
         const toggle = document.getElementById('admin-attention-toggle');
-        const panel = document.getElementById('admin-inspection-reports');
+        const panel = document.getElementById('admin-attention-reports');
+
         if (!toggle || !panel) return;
 
         toggle.addEventListener('click', () => {
-            const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
+            const isExpanded =
+                toggle.getAttribute('aria-expanded') === 'true';
+
             toggle.setAttribute('aria-expanded', String(!isExpanded));
             panel.hidden = isExpanded;
 
             if (!isExpanded) {
-                panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                panel.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest'
+                });
             }
         });
     })();
