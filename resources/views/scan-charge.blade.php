@@ -463,7 +463,7 @@
     {{-- Judul Halaman Bersih (Tanpa Duplikasi) --}}
     <div class="scan-header">
         <h1>Mulai Pengisian Daya SPKLU</h1>
-        <p>Pindai QR Code pada unit stasiun pengisian daya atau masukkan nomor unit charger untuk memulai sesi charging.</p>
+        <p>Pindai QR Code pada unit stasiun pengisian daya atau masukkan nomor unit charger untuk memulai sesi pengisian daya.</p>
     </div>
 
     {{-- Notifikasi Error / Sukses --}}

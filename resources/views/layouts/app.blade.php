@@ -308,7 +308,7 @@
 
                 <form action="{{ url('/logout') }}" method="POST" style="margin: 0;">
                     @csrf
-                    <button class="nav-logout" type="submit">🚪 Logout</button>
+                    <button class="nav-logout" type="submit">🚪 Keluar</button>
                 </form>
             </div>
         @endauth

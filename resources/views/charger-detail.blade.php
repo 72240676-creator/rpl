@@ -221,7 +221,7 @@
                         font-size: 14px;
                     "
                 >
-                    Pilih Kendaraan untuk Charging:
+                    Pilih Kendaraan untuk Pengisian Daya:
                 </label>
 
                 <select

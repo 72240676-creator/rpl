@@ -64,7 +64,7 @@ class CustomerDashboardTest extends TestCase
             ->assertSee('Hyundai Ioniq 5')
             ->assertSee('AB 1234 EV')
             ->assertSee('Pilih kendaraan')
-            ->assertSee('Mulai charging')
+            ->assertSee('Mulai pengisian daya')
             ->assertSee(route('scan.charge'), false);
     }
 

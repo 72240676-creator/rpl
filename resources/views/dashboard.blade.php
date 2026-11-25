@@ -371,7 +371,7 @@
                 <span class="stat-icon blue" aria-hidden="true">📋</span>
                 <span class="stat-copy">
                     <span class="stat-label">Aktivitas</span>
-                    <span class="stat-value">Riwayat charging</span>
+                    <span class="stat-value">Riwayat pengisian</span>
                 </span>
             </a>
 
@@ -400,7 +400,7 @@
                 <p class="hero-eyebrow">EV Charge · Pengisian daya</p>
                 <h2 id="dashboardHeroTitle">
                     @if ($ongoingSession)
-                        Sesi charging Anda sedang berlangsung
+                        Sesi pengisian daya sedang berlangsung
                     @elseif ($vehicle)
                         Kendaraan siap untuk mengisi daya
                     @else
@@ -413,14 +413,14 @@
                     @elseif ($vehicle)
                         Cari unit dengan konektor {{ $vehicle->tipe_konektor }}, periksa tarif, lalu mulai pengisian daya.
                     @else
-                        Tambahkan data kendaraan dan tipe konektor agar dapat memulai proses charging.
+                        Tambahkan data kendaraan dan tipe konektor agar dapat memulai proses pengisian daya.
                     @endif
                 </p>
             </div>
             @if ($ongoingSession)
                 <a class="hero-action" href="{{ route('charging.session', $ongoingSession->id) }}">Lanjutkan sesi <span aria-hidden="true">→</span></a>
             @elseif ($vehicle)
-                <a class="hero-action" href="{{ route('scan.charge') }}">Mulai charging <span aria-hidden="true">→</span></a>
+                <a class="hero-action" href="{{ route('scan.charge') }}">Mulai pengisian daya <span aria-hidden="true">→</span></a>
             @else
                 <a class="hero-action" href="{{ url('/profile') }}">Daftarkan kendaraan <span aria-hidden="true">→</span></a>
             @endif
@@ -429,7 +429,7 @@
         <section class="dashboard-panel" aria-labelledby="stationHeading">
             <div class="panel-heading">
                 <div>
-                    <h2 id="stationHeading">SPKLU terdekat dengan charger tersedia</h2>
+                    <h2 id="stationHeading">SPKLU terdekat dengan unit pengisi daya tersedia</h2>
                     <p>Urutkan dari lokasi Anda, lalu bandingkan konektor, daya, dan tarif.</p>
                 </div>
                 <div class="station-tools">
@@ -453,7 +453,7 @@
                            data-name="{{ $station->nama_lokasi }}"
                            aria-label="Lihat {{ $station->nama_lokasi }} di daftar SPKLU"
                            @if ($loop->iteration > 3) hidden @endif>
-                            <span class="station-status">Charger tersedia</span>
+                            <span class="station-status">Unit tersedia</span>
                             <h3>{{ $station->nama_lokasi }}</h3>
                             <p class="station-address">{{ $station->alamat }}</p>
                             <div class="station-meta">
@@ -475,7 +475,7 @@
                 </div>
             @else
                 <div class="station-empty">
-                    <strong>Belum ada charger yang tersedia</strong>
+                    <strong>Belum ada unit pengisi daya yang tersedia</strong>
                     <p>Silakan cek kembali nanti atau lihat semua lokasi SPKLU.</p>
                     <a class="text-link" href="{{ route('locations.index') }}">Buka peta SPKLU <span aria-hidden="true">→</span></a>
                 </div>
@@ -487,7 +487,7 @@
                 <div class="panel-heading">
                     <div>
                         <h2 id="vehicleHeading">Pilih kendaraan</h2>
-                        <p>Kendaraan yang dipilih akan digunakan saat memulai sesi charging.</p>
+                        <p>Kendaraan yang dipilih akan digunakan saat memulai sesi pengisian daya.</p>
                     </div>
                     <a class="text-link" href="{{ url('/profile') }}">Kelola kendaraan <span aria-hidden="true">→</span></a>
                 </div>
