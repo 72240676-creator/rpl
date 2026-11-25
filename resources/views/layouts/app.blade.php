@@ -282,7 +282,7 @@
                     {{-- Dashboard tetap memakai halaman yang dikerjakan Darryl --}}
                     <a href="{{ route('admin.dashboard') }}"
                     class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-                        🏠 Dashboard
+                        🏠 Beranda
                     </a>
                     <a href="{{ route('admin.reports.index') }}" class="{{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
                         📊 Laporan
@@ -292,14 +292,14 @@
                     </a>
                 @elseif(auth()->user()->peran === 'operator')
                     <a href="{{ route('operator.dashboard') }}" class="{{ request()->routeIs('operator.dashboard') ? 'active' : '' }}">
-                        🏠 Dashboard
+                        🏠 Beranda
                     </a>
                     <a href="{{ route('operator.stations.index') }}" class="{{ request()->routeIs('operator.stations.*') ? 'active' : '' }}">
                         ⚡ Kelola SPKLU
                     </a>
                 @else
                     {{-- Menu user biasa (Driver) --}}
-                    <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">🏠 Dashboard</a>
+                    <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">🏠 Beranda</a>
                     <a href="{{ route('locations.index') }}" class="{{ request()->routeIs('locations.*') ? 'active' : '' }}">🗺️ SPKLU</a>
                     <a href="{{ route('charging.history') }}" class="{{ request()->routeIs('charging.history') ? 'active' : '' }}">⚡ Riwayat</a>
                     <a href="{{ route('notifications.index') }}" class="{{ request()->routeIs('notifications.*') ? 'active' : '' }}">🔔 Notifikasi</a>
